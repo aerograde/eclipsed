@@ -1,0 +1,42 @@
+127.0.0.1 - - [06/Sep/2026 12:48:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 12:48:31] "GET /index.svg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 12:48:31] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 12:48:31] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 12:48:31] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 12:48:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 12:48:49] "GET /index.svg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 12:48:49] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 12:48:49] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 13:09:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 13:09:38] "GET /index.svg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 13:09:39] "GET /index.svg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 13:09:39] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:09:39] "GET /lan/health HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:09:39] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 13:09:39] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:09:39] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:09:42] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:09:42] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:09:47] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:09:47] "GET /lan/health HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:09:48] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:09:48] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:09:49] "GET /sw.js HTTP/1.1" 304 -
+127.0.0.1 - - [06/Sep/2026 13:09:50] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:09:50] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:10:25] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:10:25] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:11:03] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:11:03] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:11:04] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:11:04] "GET /api/push/vapid HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 13:11:10] code 404, message File not found
+127.0.0.1 - - [06/Sep/2026 13:11:10] "GET /lan/health HTTP/1.1" 404 -
+127.0.0.1 - - [06/Sep/2026 14:59:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 14:59:36] "GET /index.svg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 17:06:10] "GET /gifs-catalog.json HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 21:16:29] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 21:16:29] "HEAD /index.svg HTTP/1.1" 200 -
+127.0.0.1 - - [07/Sep/2026 09:46:09] code 404, message File not found
+127.0.0.1 - - [07/Sep/2026 09:46:09] "GET /lan/health HTTP/1.1" 404 -
+127.0.0.1 - - [07/Sep/2026 09:46:24] "GET /index.svg HTTP/1.1" 200 -

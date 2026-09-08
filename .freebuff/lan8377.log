@@ -1,0 +1,7 @@
+
+eclipsed. — LAN room directory + app host
+  Room endpoints serve LAN clients only (private addresses).
+  Open the app from any device on this network at:
+    http://192.168.0.100:8377/
+  (listener bound to all interfaces — override with HOST=192.168.x.y)
+

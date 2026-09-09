@@ -22,7 +22,7 @@
           <xhtml:span class="global-glyph" aria-hidden="true"></xhtml:span>
           <xhtml:span class="global-copy">
             <xhtml:span class="global-name">Global</xhtml:span>
-            <xhtml:span class="global-sub" id="globalRowSub">Everyone on this network</xhtml:span>
+            <xhtml:span class="global-sub" id="globalRowSub">Everyone in this mesh</xhtml:span>
           </xhtml:span>
           <xhtml:span class="global-go" aria-hidden="true"></xhtml:span>
         </xhtml:button>
@@ -94,9 +94,9 @@
                surface; signaling internals still read/write these nodes. -->
           <xhtml:div id="waitReply">
             <xhtml:div class="divider-row"><xhtml:span class="divider-line"></xhtml:span><xhtml:span class="divider-label">finish connecting</xhtml:span><xhtml:span class="divider-line"></xhtml:span></xhtml:div>
-            <xhtml:p class="flow-hint">Once your friend opens the invite, they’ll get a short reply to send back. Paste it below to open the room.</xhtml:p>
+            <xhtml:p class="flow-hint">Once your friend opens the invite, they’ll get a long reply to send back. Paste it below to open the room. The link then stays alive via mesh keepalive.</xhtml:p>
             <xhtml:div class="reply-paste">
-              <xhtml:textarea id="answerInput" class="plain-area" placeholder="Paste their reply here…" spellcheck="false" aria-label="Reply code" rows="2"></xhtml:textarea>
+              <xhtml:textarea id="answerInput" class="plain-area" placeholder="Paste their long reply here…" spellcheck="false" aria-label="Reply code" rows="2"></xhtml:textarea>
               <xhtml:button id="applyAnswer" class="btn primary" type="button" disabled="disabled"><xhtml:span id="applyAnswerLabel">Connect</xhtml:span></xhtml:button>
             </xhtml:div>
           </xhtml:div>
@@ -172,7 +172,7 @@
           <xhtml:div class="welcome-inner">
             <xhtml:section class="land-start" id="landStart" aria-label="Start a private room">
               <xhtml:h2 class="land-h2">Private rooms</xhtml:h2>
-              <xhtml:p class="land-sub">Give a room a code and share it — only people with the code get in.</xhtml:p>
+              <xhtml:p class="land-sub">Create a room with a short code — mesh members join with the code, newcomers with the long invite. No servers.</xhtml:p>
 
               <xhtml:div id="connectCard" class="connect-card">
                 <xhtml:div class="seg" role="tablist" aria-label="Create or join a room">
@@ -183,7 +183,7 @@
                 <xhtml:div id="offerPanel" class="flow">
                   <xhtml:div class="flow-head">
                     <xhtml:h2 id="flowTitle" class="flow-title">Create a room</xhtml:h2>
-                    <xhtml:p class="flow-hint">Choose a code (1–32 letters, numbers, - or _). Share it — anyone who types it joins.</xhtml:p>
+                    <xhtml:p class="flow-hint">Choose a code (1–32 letters, numbers, - or _). Mesh members join with the code — newcomers join with the long invite below.</xhtml:p>
                   </xhtml:div>
 
                   <xhtml:div class="field">
@@ -223,7 +223,7 @@
                         <xhtml:span class="invite-code-chip" id="inviteCodeChip" role="button" tabindex="0" title="Tap to copy this room code">#lobby</xhtml:span>
                         <xhtml:span class="invite-lock" id="inviteLockBadge" hidden="hidden"><xhtml:i data-lucide="lock"></xhtml:i>password</xhtml:span>
                       </xhtml:div>
-                      <xhtml:p class="step-caption" id="invitePasteHint">Anyone who pastes this link lands directly in <xhtml:span class="invite-room-name" id="inviteRoomName">this room</xhtml:span>. Tap your code chip above to copy just the room’s name:</xhtml:p>
+                      <xhtml:p class="step-caption" id="invitePasteHint">Anyone who pastes this link lands directly in <xhtml:span class="invite-room-name" id="inviteRoomName">this room</xhtml:span>. Mesh members can also join with #code — tap the chip to copy it:</xhtml:p>
                       <xhtml:div class="invite-link-row">
                         <xhtml:input id="inviteLink" class="invite-link-input" readonly="readonly" spellcheck="false" aria-label="Invite code"/>
                         <xhtml:button id="copyInviteLink" class="btn primary small" type="button"><xhtml:span>Copy invite</xhtml:span></xhtml:button>
@@ -245,7 +245,7 @@
                 <xhtml:div id="joinPanel" class="flow" hidden="hidden">
                   <xhtml:div class="flow-head">
                     <xhtml:h2 class="flow-title">Join a room</xhtml:h2>
-                    <xhtml:p class="flow-hint">Type the code of the room you were given — it connects automatically.</xhtml:p>
+                    <xhtml:p class="flow-hint">Type a mesh room code — it connects automatically. First time here? Paste the long invite instead.</xhtml:p>
                   </xhtml:div>
                   <xhtml:div class="field">
                     <xhtml:span class="code-input-wrap">
@@ -255,7 +255,7 @@
                   </xhtml:div>
                   <xhtml:div id="lanNearby" class="lan-nearby" hidden="hidden">
                     <xhtml:div class="lan-nearby-head">
-                      <xhtml:span class="lan-nearby-label">Rooms on this network</xhtml:span>
+                      <xhtml:span class="lan-nearby-label">Rooms live in this mesh</xhtml:span>
                       <xhtml:span class="lan-nearby-dot" aria-hidden="true"></xhtml:span>
                     </xhtml:div>
                     <xhtml:div id="lanRoomList" class="lan-room-list"></xhtml:div>
@@ -635,6 +635,10 @@ input:-webkit-autofill + .icon-btn { color: var(--sun); }
 
 /* the stage top bar belongs to the landing — inside a room the chat head takes over */
 .app-shell.in-chat .topbar { display: none; }
+/* mesh gate — the rooms site stays locked until this device joins the mesh
+   (one long-code connection). The welcome card is the gate and stays usable. */
+.app-shell.mesh-locked .side-scroll { opacity: 0.45; pointer-events: none; filter: saturate(0.6); }
+.app-shell.mesh-locked .global-row { opacity: 0.45; pointer-events: none; }
 .app-shell:not(.in-chat):not(.awaiting) .tb-title { display: none; }
 
 /* ===========================================================================
@@ -3540,13 +3544,13 @@ input:-webkit-autofill:focus {
 
   <!-- ================= embedded service worker =================
        The notification worker lives inside this SVG so the app ships as one
-       file. The LAN server answers worker requests to /index.svg (and the
+       file. The static host answers worker requests to /index.svg (and the
        /sw.js · /sw.svg aliases) with this exact block as JavaScript; inside
        the page the block detects a window and returns immediately. -->
   <script type="application/ecmascript"><![CDATA[
 /*__ECLIPSED_SW_BEGIN__*/
 /* eclipsed. notification service worker — embedded in index.svg.
-   The LAN server serves this exact block as the worker script when the SVG
+   The app registers this exact block as the worker script when the SVG
    URL is fetched as a service worker, so worker and app always ship as one
    file. Evaluated inside the page it detects a window and does nothing. */
 (function () {
@@ -3669,7 +3673,7 @@ input:-webkit-autofill:focus {
       var MESH_RETRY_DELAY = 12000;
       var MESH_HEARTBEAT_MS = 8000;
       // Google's free STUN servers let peers find each other across NATs once
-      // signaling has matched them — this is what makes a room code work between
+      // the long invite has matched them — this is what makes WebRTC work between
       // two different home networks, not just one LAN.
       var ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
       var GOVERNANCE_PRESENCE_TTL = 90000;
@@ -3748,35 +3752,26 @@ input:-webkit-autofill:focus {
         meshPanelOpen: false,
         governancePanelOpen: false,
         governance: null,
+        governanceTargetId: null,
         governanceAppliedKicks: {},
         friends: null,
         friendBannerTargetId: null,
         meshManualOfferLink: null,
         meshManualAnswerLink: null,
+        meshRoomDir: {},
+        meshDirLocalOffer: {},
+        meshDirPendingOffer: {},
+        meshDirReqCounter: 0,
+        meshDirSeen: {},
+        meshDirHeartbeatTimer: null,
         lanServerUp: false,
-        lanProbing: false,
-        lanProbePromise: null,
-        lanOwnerToken: '',
         lanRoomRegistered: false,
         lanRoomCode: null,
-        lanAnswerCursor: 0,
-        lanPollCode: null,
-        lanPolling: false,
-        lanPollTimer: null,
-        lanHeartbeatTimer: null,
-        lanRoomsTimer: null,
         lanJoinCode: null
       };
 
       var els = {};
-      var LAN_JOIN_WATCH_MS = 5000;
-      var LAN_JOIN_MAX_ATTEMPTS = 3;
-      var lanJoinWatchTimer = null;
-      var lanJoinWatchCode = '';
-      var lanJoinAttempts = 0;
-      var lanJoinGiveUp = false;
-      var lanReflowTimer = null;
-      var lanReflowing = false;
+      // Retired: LAN join-watch / reflow timers removed.
       var namesA = ['Quiet', 'Copper', 'Silver', 'Soft', 'Bright', 'Little', 'Hidden', 'Lucky', 'Calm', 'North'];
       var namesB = ['Comet', 'Finch', 'Cedar', 'Orbit', 'Moth', 'Pine', 'Tide', 'Pixel', 'Clover', 'Signal'];
 
@@ -4300,6 +4295,7 @@ input:-webkit-autofill:focus {
         setText(els.meshPanelSummary, open.length ? 'Connected to ' + open.length + ' adaptive mesh neighbor' + (open.length === 1 ? '' : 's') + '. Smart cap: ' + MESH_MAX_LINKS + '.' : 'Direct links are negotiated through the room.');
         if (els.meshInviteButton) els.meshInviteButton.disabled = !state.roomId || !meshTransportAvailable() || !meshHasLinkCapacity(1);
         if (els.meshManageButton) els.meshManageButton.disabled = !state.roomId;
+        try { updateMeshGate(); } catch (error) { /* optional */ }
         if (state.roomId && !primaryOpen && !open.length && state.connected) {
           state.connected = false;
           state.peerPresent = false;
@@ -4439,6 +4435,7 @@ input:-webkit-autofill:focus {
       }
 
       function handleMeshPayload(payload, sourceLink, suppressForward) {
+        if (payload && typeof payload.type === 'string' && payload.type.indexOf('room-') === 0) { meshDirHandle(payload, sourceLink || null); return; }
         if (!payload || typeof payload.type !== 'string' || payload.roomId !== state.roomId) return;
         var target = normalizeUserId(payload.toId || payload.targetId || payload.dmTo);
         if (target && target !== state.localUserId) {
@@ -4628,6 +4625,15 @@ input:-webkit-autofill:focus {
           }
         });
         if (now - state.meshLastRosterBroadcast > 10000) broadcastMeshRoster();
+        try {
+          if (meshDirPrune()) meshDirRefreshList();
+          if (state.lanRoomRegistered && state.role === 'offer' && state.lanRoomCode) {
+            if (!state._meshDirLastBeat || now - state._meshDirLastBeat >= MESH_DIR_HEARTBEAT_MS) {
+              state._meshDirLastBeat = now;
+              meshDirAnnounce(state.lanRoomCode, { name: state.localName, protected: Boolean(state.roomPassHash && state.roomPass) });
+            }
+          }
+        } catch (error) { /* directory upkeep is best effort */ }
         meshMaybeExpand();
         updateMeshUi();
       }
@@ -4901,7 +4907,8 @@ input:-webkit-autofill:focus {
         try { message = JSON.parse(event.data); } catch (error) { return; }
         link.lastSeen = Date.now();
         link.failures = 0;
-        if (message.roomId !== state.roomId) return;
+        if (typeof message.type === 'string' && message.type.indexOf('room-') === 0) { meshDirHandle(message, link); return; }
+          if (message.roomId !== state.roomId) return;
           if (message.type === 'mesh-hello') {
           var helloId = normalizeUserId(message.fromId);
           if (!helloId || helloId !== link.userId || message.toId !== state.localUserId || normalizeMeshId(message.meshId) !== link.meshId) return;
@@ -5809,6 +5816,16 @@ input:-webkit-autofill:focus {
         setText(els.topbarTitle, view === 'chat' ? '#' + (state.roomId || GLOBAL_ROOM_ID) : '');
         var shell = document.querySelector('.app-shell');
         if (shell) shell.classList.toggle('in-chat', view === 'chat');
+        try {
+          if (view === 'chat' && !meshGateMeshed() && !state.connected && !state.role) {
+            els.chatView.hidden = true;
+            els.welcomeView.hidden = false;
+            if (shell) shell.classList.toggle('in-chat', false);
+            showToast('Join the mesh first — paste one long invite to unlock the rooms.', true);
+            updateMeshGate();
+            return;
+          }
+        } catch (error) { /* optional */ }
         updateShellAwaiting();
         applyRoomTint();
         updateGlobalPin();
@@ -7211,7 +7228,7 @@ input:-webkit-autofill:focus {
         if (state.roomId) setText(els.topbarTitle, '#' + id);
       }
 
-      function updateRoomInputState() {
+                  function updateRoomInputState() {
         var id = normalizeRoomId(els.roomInput.value);
         var valid = isValidRoomId(id);
         els.roomInput.value = id;
@@ -7222,7 +7239,7 @@ input:-webkit-autofill:focus {
         return valid;
       }
 
-      function selectedRoomId() {
+                  function selectedRoomId() {
         var id = normalizeRoomId(els.roomInput.value);
         els.roomInput.value = id;
         if (!isValidRoomId(id)) {
@@ -7359,7 +7376,7 @@ input:-webkit-autofill:focus {
       // one is in it, it resets. A fresh host always starts from a clean slate,
       // joining a live Global never replays another epoch's stored copy, and an
       // empty Global leaves nothing behind on this device to resurrect later.
-      function resetGlobalRoomState() {
+            function resetGlobalRoomState() {
         try {
           localStorage.removeItem(roomStorageKey(GLOBAL_ROOM_ID));
           localStorage.removeItem(roomRosterKey(GLOBAL_ROOM_ID));
@@ -7475,18 +7492,9 @@ input:-webkit-autofill:focus {
         try { state.channel.send(JSON.stringify({ type: 'leave', roomId: state.roomId })); } catch (error) { /* channel may be closing */ }
       }
 
-      function leaveRoom(roomId) {
-        // Leaving parks the room: the transport closes but the transcript stays
-        // on this device (only an explicit Forget erases it), so rooms can be
-        // reopened and switched between freely without losing the conversation.
-        // #global is the one exception: it is a shared channel that belongs to
-        // the people in it, so leaving an empty Global wipes its stored copy
-        // (an empty channel must not leave ghosts for the next person).
+            function leaveRoom(roomId) {
         var targetRoom = roomId || state.roomId;
         if (targetRoom === state.roomId) {
-          if (normalizeRoomId(targetRoom) === GLOBAL_ROOM_ID && !state.peerPresent && !meshOpenLinks().length) {
-            resetGlobalRoomState();
-          }
           state.roomId = null;
           state.peerPresent = false;
           state.roomAdmin = false;
@@ -7495,6 +7503,7 @@ input:-webkit-autofill:focus {
           state.roomUsers = [];
           state.governance = null;
           state.governanceAppliedKicks = {};
+          try { stopPrimaryKeepalive(); } catch (error) { /* optional */ }
           clearRenderedMessages();
           hideMentionMenu();
           updateShellAwaiting();
@@ -7566,10 +7575,11 @@ input:-webkit-autofill:focus {
         state.channel = null;
         state.pc = null;
         state.role = null;
+        try { startPrimaryKeepalive(); } catch (error) { /* optional */ }
         return true;
       }
 
-      function closeTransport(preserveMesh) {
+            function closeTransport(preserveMesh) {
         var channel = state.channel;
         var pc = state.pc;
         var retainedByMesh = Boolean(preserveMesh && state.meshLinks.some(function (link) {
@@ -7578,6 +7588,7 @@ input:-webkit-autofill:focus {
         if (!preserveMesh) {
           removeMeshLinks();
           state.meshPrimaryReserved = false;
+          stopPrimaryKeepalive();
         }
         state.connectionId += 1;
         state.channel = null;
@@ -7609,11 +7620,8 @@ input:-webkit-autofill:focus {
         els.answerOutputWrap.hidden = true;
       }
 
-      function parkCurrentRoom() {
-        // Free room switching: the current room is parked (connection closed,
-        // transcript + roster kept on this device) and the stage returns to the
-        // welcome view, ready for the next open/join flow.
-        state.enterGlobalChat = false;
+            function parkCurrentRoom() {
+        try { state.enterGlobalChat = false; } catch (error) { /* optional */ }
         if (!state.roomId && !state.role && !state.connected) {
           clearInviteUi();
           setView('welcome');
@@ -7623,10 +7631,10 @@ input:-webkit-autofill:focus {
         clearInviteUi();
       }
 
-      function closePeer(silent, notifyPeer, preserveJoinOffer) {
+            function closePeer(silent, notifyPeer, preserveJoinOffer) {
         var roomId = state.roomId;
-        removeLocalOffer(roomId);
-        lanFinishRoom();
+        stopPrimaryKeepalive();
+        try { lanFinishRoom(); } catch (error) { /* directory withdraw is best effort */ }
         if (notifyPeer) sendLeave();
         leaveRoom(roomId);
         closeTransport();
@@ -7688,29 +7696,14 @@ input:-webkit-autofill:focus {
         els.messageInput.disabled = true;
         els.sendButton.disabled = true;
         showToast(notice, isError);
-        // A creator who was hosting a direct room is left stranded in a
-        // read-only chat once the only peer leaves: the old offer is spent
-        // (its LAN entry was deleted when the call connected), so nobody can
-        // rejoin by code and the only "exit" was Leave, which erases history.
-        // Re-publish a fresh invite for the same room and return to the invite
-        // view instead — the transcript is kept and reappears on next connect.
-        // (#global is different: it never shows the invite page — it quietly
-        // re-hosts and stays in the persistent chat stage.)
+        // A host left with a spent offer after the peer leaves gets a fresh long
+        // invite for the same room — transcript kept, next join uses the new code.
+        // Mesh links (if any) keep the room alive underneath; otherwise reopen.
         if (wasOfferHost && wasConnected && hadRoom) {
           setTimeout(function () {
             if (state.leaving || state.connected || !state.roomId || state.role) return;
-            if (normalizeRoomId(state.roomId) === GLOBAL_ROOM_ID) {
-              // Re-host #global quietly: no invite page, straight back to the
-              // persistent chat stage, LAN entry re-published for new joiners.
-              state.enterGlobalChat = true;
-              els.roomInput.value = GLOBAL_ROOM_ID;
-              updateRoomInputState();
-              setMode('offer');
-              clearSignalError();
-              try { generateOffer(); } catch (error) { /* status surfaces errors */ }
-            } else {
-              reopenRoomInvite(state.roomId);
-            }
+            if (meshOpenLinks().length) return; // mesh still holds the room
+            reopenRoomInvite(state.roomId);
           }, 900);
         }
       }
@@ -7733,14 +7726,13 @@ input:-webkit-autofill:focus {
         generateOffer();
       }
 
-      function makePeerConnection(role, keepRoom) {
+            function makePeerConnection(role, keepRoom) {
         if (!window.RTCPeerConnection) throw new Error('WebRTC is not available in this browser. Try a current desktop or mobile browser.');
         if (keepRoom) {
           if (state.channel && state.pc) {
             if (state.channel.readyState === 'open' && state.peerUserId) {
               if (!promotePrimaryToMesh()) throw new Error('The current connection could not be retained.');
             } else {
-              // A pending bootstrap has no peer identity yet; replace only that pending link.
               state.meshPrimaryReserved = false;
               closeTransport(true);
             }
@@ -7755,18 +7747,26 @@ input:-webkit-autofill:focus {
         pc.onconnectionstatechange = function () {
           if (!isCurrentConnection(connectionId, pc)) return;
           if (pc.connectionState === 'connected') {
+            notePeerActivity();
+            if (primaryRecoverTimer) { clearTimeout(primaryRecoverTimer); primaryRecoverTimer = null; }
             setStatus('connecting', 'CONNECTING', 'Opening secure channel', 'Waiting for data channel');
           } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-            handlePeerGone(connectionId, pc, null, 'The direct connection ended. History saved locally until you leave.', true);
+            if (meshOpenLinks().length) {
+              updateMeshUi();
+              return; // mesh still holds the room — do not tear down
+            }
+            schedulePrimaryRecovery(connectionId, pc);
           } else if (pc.connectionState === 'disconnected') {
-            setStatus('connecting', 'PAUSED', 'Peer temporarily disconnected', 'Waiting for the connection to recover');
+            setStatus('connecting', 'PAUSED', 'Peer temporarily disconnected', 'Holding the room — healing on its own');
             setComposerState('Waiting for the connection to recover');
+            schedulePrimaryRecovery(connectionId, pc);
           }
         };
         pc.oniceconnectionstatechange = function () {
           if (!isCurrentConnection(connectionId, pc)) return;
           if (pc.iceConnectionState === 'failed') {
-            handlePeerGone(connectionId, pc, null, 'No direct route found. History saved locally until you leave.', true);
+            if (meshOpenLinks().length) { updateMeshUi(); return; }
+            schedulePrimaryRecovery(connectionId, pc);
           }
         };
         pc.ondatachannel = function (event) {
@@ -7861,7 +7861,7 @@ input:-webkit-autofill:focus {
         try { sendProfilePicture(); } catch (error) { /* optional */ }
       }
 
-      function markConnected(connectionId, channel) {
+            function markConnected(connectionId, channel) {
         if (!isCurrentConnection(connectionId, null, channel)) return;
         if (!requireNotifications()) {
           closePeer(false, false);
@@ -7871,16 +7871,16 @@ input:-webkit-autofill:focus {
         state.peerPresent = true;
         state.meshPrimaryReserved = false;
         state.leaving = false;
+        notePeerActivity();
         if (state.role === 'offer' && state.lanRoomRegistered && normalizeRoomId(state.roomId) === GLOBAL_ROOM_ID) {
           // #global stays discoverable for as long as it is hosted: once someone
-          // joins, stand up a fresh welcome offer for the next person on the
-          // network instead of tearing the directory entry down.
+          // joins, stand up a fresh welcome offer for the next mesh member.
           scheduleGlobalReflow();
         } else {
           lanFinishRoom();
         }
         meshTrimToCapacity();
-        setStatus('online', 'ONLINE', 'Secure channel active', 'Private connection established');
+        setStatus('online', 'ONLINE', 'Secure channel active', 'Private connection established — keepalive holding it open');
         setView('chat');
         els.systemNotice.hidden = false;
         els.messageInput.disabled = false;
@@ -7888,22 +7888,24 @@ input:-webkit-autofill:focus {
         setComposerState('');
         sendHello();
         ensureMeshMaintenance();
+        startPrimaryKeepalive();
+        try { maybeSendPrimaryMeshHello(); } catch (error) { /* optional */ }
+        try { meshDirPrune(); lanStartRoomsList(); } catch (error) { /* optional */ }
         updateMeshUi();
         updateVoiceUi();
-        // The peer identity hello usually lands right after the channel opens; by
-        // then the call button can be enabled — recompute once the dust settles.
         setTimeout(updateVoiceUi, 350);
-        els.messageInput.focus();
+        try { els.messageInput.focus(); } catch (error) { /* optional */ }
         refreshSideLists();
       }
 
-      function attachDataChannel(channel, connectionId) {
+            function attachDataChannel(channel, connectionId) {
         if (!isCurrentConnection(connectionId)) return;
         state.channel = channel;
         channel.onopen = function () {
           if (isCurrentConnection(connectionId, null, channel)) markConnected(connectionId, channel);
         };
         channel.onclose = function () {
+          if (meshOpenLinks().length) { updateMeshUi(); return; }
           handlePeerGone(connectionId, null, channel, 'Your peer left. History saved locally until you leave.', false);
         };
         channel.onerror = function () {
@@ -7915,6 +7917,14 @@ input:-webkit-autofill:focus {
           if (!isCurrentConnection(connectionId, null, channel) || typeof event.data !== 'string') return;
           var message;
           try { message = JSON.parse(event.data); } catch (error) { return; }
+          if (message && (message.type === 'ping' || message.type === 'pong') && message.roomId === state.roomId) {
+            notePeerActivity();
+            if (message.type === 'ping') {
+              try { channel.send(JSON.stringify({ type: 'pong', roomId: state.roomId, fromId: state.localUserId, ts: Date.now() })); } catch (error) { /* closing */ }
+            }
+            return;
+          }
+          notePeerActivity();
           if (message.type === 'identity-update') {
             if (message.roomId !== state.roomId) return;
             updatePeer(message.name, message.color, message.picture, message.userId, message.admin, state.roomUsers, null, null, message.grant);
@@ -7923,6 +7933,11 @@ input:-webkit-autofill:focus {
           if (message.type === 'hello') {
             if (message.roomId !== state.roomId) return;
             updatePeer(message.name, message.color, message.picture, message.userId, message.admin, message.users, message.governance, message.directory, message.grant);
+            try { maybeSendPrimaryMeshHello(); } catch (error) { /* optional */ }
+            return;
+          }
+          if (typeof message.type === 'string' && message.type.indexOf('room-') === 0) {
+            meshDirHandle(message, 'primary');
             return;
           }
           if (message.type === 'mesh-packet' && message.roomId === state.roomId) {
@@ -7938,6 +7953,7 @@ input:-webkit-autofill:focus {
             governanceEvaluateOpenProposals();
             governanceProcessActions();
             promotePrimaryToMesh(message.meshId);
+            startPrimaryKeepalive();
             return;
           }
           if (typeof message.type === 'string' && message.type.indexOf('mesh-') === 0 && message.roomId === state.roomId) {
@@ -8083,7 +8099,7 @@ input:-webkit-autofill:focus {
         els.messageInput.style.height = Math.min(140, Math.max(22, els.messageInput.scrollHeight)) + 'px';
       }
 
-      async function generateOffer() {
+            async function generateOffer() {
         if (!requireSavedProfile()) return;
         if (!requireNotifications()) return;
         clearSignalError();
@@ -8122,69 +8138,64 @@ input:-webkit-autofill:focus {
           if (state.roomPass) state.roomPassHash = await roomPwHash(roomId, state.roomPass);
           els.offerOutput.value = encodeSignal(pc.localDescription);
           els.offerOutputWrap.hidden = false;
-          publishLocalOffer(roomId, els.offerOutput.value);
           touchRoomMeta(roomId, { protected: Boolean(state.roomPass), mine: true, pw: state.roomPass });
-          // Publish under the room's short code so anyone on this network who
-          // types it connects automatically — no long code, no pasting replies.
-          var lanRoomLive = false;
-          if (state.lanServerUp) {
-            try {
-              await lanPublishRoom(roomId, els.offerOutput.value);
-              state.lanRoomCode = roomId;
-              state.lanRoomRegistered = true;
-              state.lanAnswerCursor = 0;
-              lanStartHeartbeat(roomId);
-              lanStartPolling(roomId);
-              lanRoomLive = true;
-            } catch (error) {
-              if (error && error.lanTaken) {
-                // Code collision: keep this room's row and transcript intact —
-                // the user can join the live room or pick another code.
-                var takenError = new Error('That code already has a room open on this network. Pick another code, or join it instead.');
-                takenError.lanTaken = true;
-                throw takenError;
-              }
-              state.lanServerUp = false;
+          // Publish under the room's short code into the mesh directory, so
+          // mesh members who type it connect automatically — no long code,
+          // no pasting replies. First contact still needs the long invite.
+          var meshRoomLive = false;
+          try {
+            var existingEntry = (state.meshRoomDir || {})[roomId];
+            if (existingEntry && existingEntry.hostId && existingEntry.hostId !== state.localUserId && Date.now() - Number(existingEntry.at || 0) <= MESH_DIR_STALE_MS) {
+              var takenError = new Error('That code already has a room open in this mesh. Pick another code, or join it instead.');
+              takenError.lanTaken = true;
+              throw takenError;
             }
+            await lanPublishRoom(roomId, els.offerOutput.value);
+            state.lanRoomCode = roomId;
+            state.lanRoomRegistered = true;
+            lanStartHeartbeat(roomId);
+            lanStartPolling(roomId);
+            lanPollTick();
+            meshRoomLive = true;
+          } catch (error) {
+            if (error && error.lanTaken) throw error;
+            meshRoomLive = false;
           }
           refreshInvitePanel(roomId);
           setText(byId('generateOfferLabel') || els.generateOffer, 'Refresh invite');
           var waitReplyPanel = byId('waitReply');
           var isGlobalOffer = normalizeRoomId(roomId) === GLOBAL_ROOM_ID;
-          if (lanRoomLive && isGlobalOffer && state.enterGlobalChat) {
+          if (meshRoomLive && isGlobalOffer && state.enterGlobalChat) {
             // #global is a persistent channel: never show the invite page. Stay
-            // in the chat stage while the LAN entry quietly accepts joiners.
+            // in the chat stage while the mesh entry quietly accepts joiners.
             if (waitReplyPanel) waitReplyPanel.hidden = true;
             var inviteP = byId('invitePanel');
             if (inviteP) inviteP.hidden = true;
             els.offerOutputWrap.hidden = true;
-            setStatus('connecting', 'WAITING', 'Global is open — waiting for people', 'Hosting the network room on this device');
-            setComposerState('The network room is open here — it comes alive when people join');
+            setStatus('connecting', 'WAITING', 'Global is open — waiting for people', 'Hosting the mesh room on this device');
+            setComposerState('The mesh room is open here — it comes alive when people join');
             els.messageInput.disabled = true;
             els.sendButton.disabled = true;
             if (els.chatPeerStatus) setText(els.chatPeerStatus, 'Waiting for people to open Global');
             if (els.chatPeerName) setText(els.chatPeerName, 'Global');
             if (els.peerAvatar) setAvatar(els.peerAvatar, 'Global', '#9a9a9a');
-            if (els.chatEmptyCopy) setText(els.chatEmptyCopy, 'The network room is open. When other people open Global they appear here automatically.');
+            if (els.chatEmptyCopy) setText(els.chatEmptyCopy, 'The mesh room is open. When other people open Global they appear here automatically.');
             setView('chat');
             try { updateGlobalPin(); } catch (error) { /* optional */ }
-          } else if (lanRoomLive) {
+          } else if (meshRoomLive) {
             if (waitReplyPanel) waitReplyPanel.hidden = true;
-            setStatus('connecting', 'WAITING', 'Room open — share #' + roomId, 'Waiting for someone to join with the code');
-            showToast('Room #' + roomId + ' is open on this network — share its code.');
-            els.answerInput.focus();
+            setStatus('connecting', 'WAITING', 'Room open — share #' + roomId, 'Mesh members join with the code; others use the invite');
+            showToast('Room #' + roomId + ' is live in this mesh — share its code, or send the long invite to newcomers.');
+            try { els.answerInput.focus(); } catch (focusError) { /* optional */ }
           } else {
             if (waitReplyPanel) waitReplyPanel.hidden = false;
             setStatus('connecting', 'WAITING', 'Invite ready to share', 'Waiting for your friend to reply');
             showToast('Invite ready for #' + roomId + '. Send it to one person.');
-            els.answerInput.focus();
+            try { els.answerInput.focus(); } catch (focusError) { /* optional */ }
           }
         } catch (error) {
           if (pc && !isCurrentConnection(connectionId, pc)) return;
           if (uiReopeningOffer && state.roomId) {
-            // A re-invite rebuild failed (code taken again, WebRTC hiccup…).
-            // Never erase the transcript here: fall back to the read-only chat
-            // so the user can Leave the room on purpose.
             if (pc) { try { pc.close(); } catch (ignore) { /* already closed */ } }
             closeTransport(false);
             state.roomPass = '';
@@ -8203,15 +8214,13 @@ input:-webkit-autofill:focus {
           state.roomPass = '';
           state.roomPassHash = null;
           if (error && error.lanTaken === true && normalizeRoomId(roomId) === GLOBAL_ROOM_ID) {
-            // The global room is already hosted on this network — join it instead
-            // of leaving the user stuck on an error.
-            state.lanServerUp = true;
+            // The global room is already live in this mesh — join it instead.
             setMode('join');
             try {
               lanJoinNearbyRoom(GLOBAL_ROOM_ID);
-              showToast('Joining the global chat that is already open on this network.');
+              showToast('Joining the global chat that is already live in this mesh.');
             } catch (joinError) {
-              showSignalError(joinError && joinError.message || 'Could not join the open global chat.');
+              showSignalError(joinError && joinError.message || 'Could not join the live global chat.');
             }
             return;
           }
@@ -8227,12 +8236,12 @@ input:-webkit-autofill:focus {
         }
       }
 
-      async function applyAnswer() {
+            async function applyAnswer() {
         if (!requireNotifications()) return;
         clearSignalError();
         var answer;
         try {
-          var answerText = await expandInviteCode(els.answerInput.value);
+          var answerText = await expandInviteCode(normalizePastedInvite(els.answerInput.value));
           answer = decodeSignal(answerText);
           validateDescription(answer, 'answer');
           if (answer.roomId !== state.roomId) throw new Error('That reply belongs to a different room. Use the matching reply.');
@@ -8242,10 +8251,10 @@ input:-webkit-autofill:focus {
           els.applyAnswer.textContent = 'Connecting…';
           setStatus('connecting', 'CONNECTING', 'Completing handshake', 'Waiting for your peer to come online');
           await state.pc.setRemoteDescription(answer);
-          removeLocalOffer(state.roomId);
+          notePeerActivity();
           if (normalizeRoomId(state.roomId) === GLOBAL_ROOM_ID && state.lanRoomRegistered) {
-            // #global keeps its directory entry (heartbeat + answer poll) after a
-            // joiner answers so the next person can still find and join it.
+            // #global stays announced for as long as it is hosted: the mesh
+            // entry keeps accepting joiners for the whole session.
           } else {
             lanFinishRoom();
           }
@@ -8315,23 +8324,12 @@ input:-webkit-autofill:focus {
         }
       }
 
-      async function generateAnswer() {
+                  async function generateAnswer() {
         if (!requireSavedProfile()) return;
-        // The invite-details box (for pasted links / raw codes) wins over the
-        // code box; move it over so the rest of this flow stays unchanged.
         var altJoin = els.joinInviteText ? String(els.joinInviteText.value || '').trim() : '';
         if (altJoin) {
           els.joinOfferInput.value = altJoin;
           if (els.joinInviteText) els.joinInviteText.value = '';
-        }
-        // Typing a bare room code (with or without the #) is the normal path.
-        var typedJoin = String(els.joinOfferInput.value || '').trim();
-        if (typedJoin && /^#?[a-z0-9_-]+$/i.test(typedJoin)) {
-          var bareJoin = typedJoin.replace(/^#/, '').toLowerCase();
-          if (bareJoin !== typedJoin) {
-            els.joinOfferInput.value = bareJoin;
-            typedJoin = bareJoin;
-          }
         }
         if (String(els.joinOfferInput.value || '').trim().indexOf(MESH_SIGNAL_PREFIX) === 0) {
           await generateMeshAnswerFromLanding();
@@ -8343,33 +8341,23 @@ input:-webkit-autofill:focus {
         var pc = null;
         var connectionId = null;
         var keepRoom = false;
-        state.localJoinCode = null;
         state.lanJoinCode = null;
         try {
           var offerText = await expandInviteCode(normalizePastedInvite(els.joinOfferInput.value));
           if (inviteLooksLikeRoomCode(offerText)) {
             var bareName = String(offerText).replace(/^#/, '');
-            // Same browser first (another window/tab hosting the code), then the
-            // LAN room directory (a device on this network hosting the code).
-            var localRaw = await requestLocalOffer(bareName);
-            var lanRaw = null;
-            if (!localRaw && state.lanServerUp) {
-              lanRaw = await lanFetchRoom(bareName);
-            }
-            if (localRaw) {
-              state.localJoinCode = bareName;
-              els.roomInput.value = bareName;
-              updateRoomInputState();
-              showToast('Found #' + bareName + ' in this browser — joining…');
-              offerText = localRaw;
-            } else if (lanRaw) {
+            // Mesh directory: a short code resolves when a mesh member hosts
+            // it live. First contact has no mesh route yet — that path needs
+            // the long invite below.
+            var meshRaw = await lanFetchRoom(bareName);
+            if (meshRaw) {
               state.lanJoinCode = bareName;
               els.roomInput.value = bareName;
               updateRoomInputState();
-              showToast('Found #' + bareName + ' on this network — joining…');
-              offerText = lanRaw;
+              showToast('Found #' + bareName + ' live in this mesh — joining…');
+              offerText = meshRaw;
             } else {
-              throw new Error('No room is open with code #' + bareName + ' right now. Check the code, and make sure the host is on the same network with the room open.');
+              throw new Error('No room is live with code #' + bareName + ' in this mesh right now. Check the code, or ask the host for a long invite (first connections always need one).');
             }
           }
           offer = decodeSignal(offerText);
@@ -8398,9 +8386,6 @@ input:-webkit-autofill:focus {
           keepRoom = state.roomId === offer.roomId;
           pc = makePeerConnection('answer', keepRoom);
           connectionId = state.connectionId;
-          // Joining the live #global starts from a clean slate — the shared
-          // channel never replays this device's stored copy from an epoch it
-          // was not a live part of.
           if (normalizeRoomId(offer.roomId) === GLOBAL_ROOM_ID && !keepRoom) resetGlobalRoomState();
           openRoom(offer.roomId);
           touchRoomMeta(offer.roomId, { protected: Boolean(offer.pw), mine: false });
@@ -8417,28 +8402,22 @@ input:-webkit-autofill:focus {
           compactInviteCode(answerRaw).then(function (compact) {
             if (compact && els.answerOutput.value === answerRaw) els.answerOutput.value = compact;
           });
-          var lanAnswerSent = false;
-          if (state.localJoinCode) {
-            postLocal({ type: 'answer', code: state.localJoinCode, raw: answerRaw });
-            setText(byId('generateAnswerLabel') || els.generateAnswer, 'New reply');
-            setStatus('connecting', 'CONNECTING', 'Reply sent to the hosting window', 'Waiting for the room to open');
-            showToast('Code matched — sent the reply to the hosting window.');
-          } else if (state.lanJoinCode) {
+          var meshAnswerSent = false;
+          if (state.lanJoinCode) {
             try {
               await lanSendAnswer(state.lanJoinCode, answerRaw);
-              lanAnswerSent = true;
+              meshAnswerSent = true;
             } catch (error) { /* fall back to a manual copy below */ }
-            if (lanAnswerSent) {
+            if (meshAnswerSent) {
               els.answerOutputWrap.hidden = true;
               setText(byId('generateAnswerLabel') || els.generateAnswer, 'Join room');
-              setStatus('connecting', 'CONNECTING', 'Joining #' + state.lanJoinCode, 'Waiting for the room to open');
+              setStatus('connecting', 'CONNECTING', 'Joining #' + state.lanJoinCode, 'Waiting for the room to open over the mesh');
               showToast('Joining #' + state.lanJoinCode + ' — the room opens automatically.');
-              if (lanJoinGiveUp) { lanJoinGiveUp = false; lanJoinAttempts = 0; }
               lanStartJoinWatch(state.lanJoinCode);
             } else {
               setText(byId('generateAnswerLabel') || els.generateAnswer, 'New reply');
               setStatus('connecting', 'WAITING', 'Reply ready to send', 'Send it back to finish connecting');
-              showToast('The room service went offline — send this reply back manually.', true);
+              showToast('The mesh route went quiet — send this reply back manually.', true);
             }
           } else {
             setText(byId('generateAnswerLabel') || els.generateAnswer, 'New reply');
@@ -8448,7 +8427,7 @@ input:-webkit-autofill:focus {
         } catch (error) {
           if (pc && !isCurrentConnection(connectionId, pc)) return;
           if (pc) {
-            if (keepRoom && state.roomId === offer.roomId) {
+            if (keepRoom && state.roomId && offer && state.roomId === offer.roomId) {
               closeTransport();
             } else {
               closePeer(false, false, true);
@@ -9244,6 +9223,102 @@ input:-webkit-autofill:focus {
       var ECLIPSE_HASH_MARK = 'eclipsed/';
       var FP_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js';
       var CODE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
+
+      /* ================ eclipsed: long-invite-only + indefinite keepalive (mesh-integrated) ================
+         Short custom codes and the LAN directory are retired. Every room uses an
+         auto-generated private id; joining requires the full long invite
+         (HOP1./E1. bootstrap or HOPM1. mesh). Once the first handshake lands, the
+         bootstrap is promoted into the adaptive mesh and a lightweight heartbeat
+         keeps the link alive indefinitely while either tab stays open:
+           - primary datachannel ping/pong every KEEPALIVE_MS
+           - transient 'disconnected' is treated as RECOVERING (grace period),
+             not 'peer left' — ICE often heals on its own for brief blips
+           - mesh heartbeats (existing meshMaintenance) continue underneath, so a
+             third peer can be added in-band without new manual codes whenever a
+             route exists; manual HOPM1. codes remain the offline fallback
+         No server, no polling, no short codes anywhere in this block. */
+      var KEEPALIVE_MS = 12000;
+      var PEER_QUIET_MS = 60000;
+      var RECOVER_GRACE_MS = 25000;
+      var primaryKeepaliveTimer = null;
+      var primaryRecoverTimer = null;
+      function primarySendPing() {
+        try {
+          if (state.channel && state.channel.readyState === 'open' && state.roomId) {
+            state.channel.send(JSON.stringify({ type: 'ping', roomId: state.roomId, fromId: state.localUserId, ts: Date.now() }));
+          }
+        } catch (error) { /* channel closing — maintenance decides */ }
+        try {
+          var open = meshOpenLinks();
+          for (var i = 0; i < open.length; i += 1) {
+            var link = open[i];
+            if (link && link.channel && link.channel.readyState === 'open' && link.ready) {
+              meshSendTransport(link.channel, JSON.stringify({ type: 'mesh-ping', roomId: state.roomId, fromId: state.localUserId, toId: link.userId, pingId: createMeshPacketId(), sentAt: Date.now() }), link);
+            }
+          }
+        } catch (error) { /* best effort */ }
+      }
+      function startPrimaryKeepalive() {
+        stopPrimaryKeepalive();
+        state.lastPeerActivity = Date.now();
+        primaryKeepaliveTimer = setInterval(function () {
+          if (!state.roomId || (!state.channel && !meshOpenLinks().length)) return;
+          primarySendPing();
+          var quiet = Date.now() - Number(state.lastPeerActivity || Date.now());
+          if ((state.connected || state.peerPresent) && quiet > PEER_QUIET_MS) {
+            setStatus('connecting', 'STALE', 'Quiet link — still holding', 'No traffic for a while; the link stays open and heals on its own');
+          }
+        }, KEEPALIVE_MS);
+        try {
+          if (navigator.wakeLock && navigator.wakeLock.request) {
+            navigator.wakeLock.request('screen').catch(function () {});
+          }
+        } catch (error) { /* optional */ }
+      }
+      function stopPrimaryKeepalive() {
+        if (primaryKeepaliveTimer) { clearInterval(primaryKeepaliveTimer); primaryKeepaliveTimer = null; }
+        if (primaryRecoverTimer) { clearTimeout(primaryRecoverTimer); primaryRecoverTimer = null; }
+      }
+      function notePeerActivity() { state.lastPeerActivity = Date.now(); }
+      function schedulePrimaryRecovery(connectionId, pc) {
+        if (primaryRecoverTimer) return;
+        setStatus('connecting', 'PAUSED', 'Connection blip — recovering', 'Holding the room open while the route heals');
+        setComposerState('Connection blip — holding the room, no need to rejoin');
+        primaryRecoverTimer = setTimeout(function () {
+          primaryRecoverTimer = null;
+          if (!isCurrentConnection(connectionId, pc)) return;
+          try {
+            var st = pc ? String(pc.connectionState || '') : '';
+            if (st === 'connected' || st === 'connecting') {
+              notePeerActivity();
+              setStatus('online', 'ONLINE', 'Secure channel active', 'Private connection established');
+              setComposerState('');
+              return;
+            }
+          } catch (error) { /* fall through to mesh check */ }
+          if (meshOpenLinks().length || meshPrimaryIsOpen()) {
+            notePeerActivity();
+            return; // mesh still holds the room — stay open indefinitely
+          }
+          handlePeerGone(connectionId, pc, null, 'The direct connection ended. History saved locally until you leave.', true);
+        }, RECOVER_GRACE_MS);
+      }
+      function looksLikeShortCode(text) {
+        var v = String(text || '').trim();
+        if (!v || v.length > 32) return false;
+        if (v.indexOf(SIGNAL_PREFIX) === 0 || v.indexOf(COMPACT_PREFIX) === 0 || v.indexOf(MESH_SIGNAL_PREFIX) === 0) return false;
+        if (v.indexOf(ECLIPSE_HASH_MARK) >= 0) return false;
+        return /^[#]?[a-z0-9_-]+$/i.test(v);
+      }
+      function autoRoomId() {
+        var cur = '';
+        try { cur = normalizeRoomId(els.roomInput && els.roomInput.value); } catch (error) { cur = ''; }
+        if (isValidRoomId(cur)) return cur;
+        var fresh = randomRoomCode(12);
+        try { if (els.roomInput) els.roomInput.value = fresh; } catch (error) { /* hidden field */ }
+        return fresh;
+      }
+
       var fingerprintId = '';
       var fingerprintPromise = null;
       var FINGERPRINT_GET_TIMEOUT_MS = 10000;
@@ -9911,10 +9986,9 @@ input:-webkit-autofill:focus {
         byId('roomAsk').hidden = true;
       }
 
-      function roomResume(code) {
+                  function roomResume(code) {
         var id = normalizeRoomId(code);
         if (!isValidRoomId(id)) return;
-        // Already live in this room — focus the chat stage instead of restarting.
         if (state.roomId && normalizeRoomId(state.roomId) === id && (state.connected || state.role)) {
           if (els.chatView && els.chatView.hidden) setView('chat');
           return;
@@ -9923,10 +9997,10 @@ input:-webkit-autofill:focus {
         if (!requireSavedProfile()) return;
         var meta = readRoomsMeta();
         var entry = meta[id] || {};
-        // A room this device joined (not hosted) may still have its host open on
-        // the network — rejoin it instead of colliding with the live host.
-        // #global always prefers joining the network's live host, then hosts.
-        if ((!entry.mine || id === GLOBAL_ROOM_ID) && !entry.protected && state.lanServerUp) {
+        // A room this device joined (not hosted) may still have its host live
+        // in the mesh — rejoin it instead of colliding with the live host.
+        // #global always prefers joining the mesh's live host, then hosts.
+        if ((!entry.mine || id === GLOBAL_ROOM_ID) && !entry.protected) {
           var liveId = id;
           lanRoomFresh(liveId).then(function (open) {
             if (open) {
@@ -9939,8 +10013,8 @@ input:-webkit-autofill:focus {
         resumeHostedRoom(id, entry);
       }
 
-      function resumeHostedRoom(id, entry) {
-        els.roomInput.value = id;
+            function resumeHostedRoom(id, entry) {
+        try { if (els.roomInput) els.roomInput.value = id; } catch (error) { /* hidden */ }
         updateRoomInputState();
         setMode('offer');
         clearSignalError();
@@ -9969,7 +10043,6 @@ input:-webkit-autofill:focus {
         } else {
           go();
         }
-
       }
 
       /* ---------- invites & links ---------- */
@@ -10012,7 +10085,7 @@ input:-webkit-autofill:focus {
         return value;
       }
 
-      function refreshInvitePanel(roomId) {
+                  function refreshInvitePanel(roomId) {
         var code = normalizeRoomId(roomId);
         var raw = els.offerOutput ? els.offerOutput.value : '';
         if (!raw || !code) return;
@@ -10029,7 +10102,7 @@ input:-webkit-autofill:focus {
         var lanCaption = byId('lanCaption');
         if (lanCaption) {
           lanCaption.hidden = !lanActive;
-          if (lanActive) setText(lanCaption, 'Room is live on your network. Tell people the code — they type it in “Join a room” and connect automatically.');
+          if (lanActive) setText(lanCaption, 'Room is live in this mesh. Mesh members type the code in “Join a room” — newcomers paste the long invite below.');
         }
         var pasteHint = byId('invitePasteHint');
         if (pasteHint) pasteHint.hidden = lanActive;
@@ -10053,7 +10126,7 @@ input:-webkit-autofill:focus {
       }
 
       /* ---------- boot: hash invites, profile, rooms ---------- */
-      function attemptJoinFromHash() {
+            function attemptJoinFromHash() {
         var invite = extractInviteFromHash();
         if (!invite) return;
         var go = function () {
@@ -10062,13 +10135,7 @@ input:-webkit-autofill:focus {
           refreshJoinAction();
           try { generateAnswer(); } catch (error) { showSignalError(error.message || 'Could not join from that invite.'); }
         };
-        // Resolving a short code may need the LAN directory, so wait for the
-        // boot probe when it is still running.
-        if (state.lanProbing) {
-          probeLanServer().then(go);
-        } else {
-          go();
-        }
+        go();
       }
 
       function initEclipsedUi() {
@@ -10170,7 +10237,7 @@ input:-webkit-autofill:focus {
             if (!ok) { showToast('Select the invite and copy it manually.', true); return; }
             var old = copyInvite.textContent;
             copyInvite.textContent = 'Copied';
-            showToast('Invite copied — send it to one person.');
+            showToast('Long invite copied — send it to one person.');
             setTimeout(function () { copyInvite.textContent = old; }, 1800);
           };
           if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -10388,235 +10455,357 @@ input:-webkit-autofill:focus {
         });
       }
 
-      function inviteLooksLikeRoomCode(text) {
+                  function inviteLooksLikeRoomCode(text) {
         var value = String(text || '').trim();
         if (!value || value.length > 32) return false;
         if (looksRawInvite(value) || value.indexOf(COMPACT_PREFIX) === 0 || value.indexOf(MESH_SIGNAL_PREFIX) === 0) return false;
         return value.replace(/^#/, '') === normalizeRoomId(value.replace(/^#/, ''));
       }
 
+      /* ================ eclipsed: serverless mesh room directory ================
+         LAN-equivalent verbs (publish / fetch / answer / heartbeat / rooms list /
+         polling / join-watch / global), transported ONLY by WebRTC mesh
+         datachannels — no HTTP, no side channel, no server.
+         - Hosts announce short codes (room-announce) with re-announce heartbeats.
+         - Members relay first-seen announces (bridge gossip) and prune by TTL.
+         - Offer fetch + answer delivery are directed mesh control messages
+           (room-offer-request / room-offer / room-answer), relayed as needed.
+         - First contact still needs a long invite (HOP1./E1.): entropy cannot be
+           addressed. After one connection the device is meshed and short codes,
+           the rooms list, and Global work with no further manual steps. */
+      var MESH_DIR_TTL_MS = 3 * 60 * 1000;
+      var MESH_DIR_HEARTBEAT_MS = 30000;
+      var MESH_DIR_STALE_MS = 90 * 1000;
+      var MESH_DIR_FRESH_MS = 100 * 1000;
+      var MESH_DIR_OFFER_TIMEOUT_MS = 8000;
+      var MESH_DIR_SEEN_CAP = 400;
+      var MESH_DIR_CACHE_KEY = 'eclipsed.meshDir.v1';
+      var lanRoomsTimer = null;
+      var lanHeartbeatTimer = null;
+      var lanPollTimer = null;
+      var lanPollCode = null;
+      var lanPolling = false;
+      var lanJoinWatchTimer = null;
+      var lanJoinWatchCode = '';
+      var lanJoinAttempts = 0;
+      var lanJoinGiveUp = false;
+      var lanReflowTimer = null;
+      var lanReflowing = false;
+      var LAN_JOIN_WATCH_MS = 5000;
+      var LAN_JOIN_MAX_ATTEMPTS = 3;
+
+      function meshGateMeshed() {
+        try {
+          if (state.connected) return true;
+          if (meshPrimaryIsOpen()) return true;
+          return meshOpenLinks().length > 0;
+        } catch (error) { return Boolean(state.connected); }
+      }
+      function updateMeshGate() {
+        var meshed = meshGateMeshed();
+        state.lanServerUp = meshed;
+        try {
+          var shell = document.querySelector('.app-shell');
+          if (shell) shell.classList.toggle('mesh-locked', !meshed);
+        } catch (error) { /* optional */ }
+        try {
+          if (!meshed && !state.roomId && !state.role) {
+            setText(els.sideStatusTitle, 'Join the mesh to begin');
+            setText(els.sideStatusDetail, 'Paste one long invite — then everything unlocks');
+          }
+        } catch (error) { /* optional */ }
+        return meshed;
+      }
+      function meshDirPrune() {
+        var now = Date.now();
+        var changed = false;
+        Object.keys(state.meshRoomDir || {}).forEach(function (code) {
+          var entry = state.meshRoomDir[code];
+          if (!entry || now - Number(entry.at || 0) > MESH_DIR_TTL_MS) {
+            delete state.meshRoomDir[code];
+            changed = true;
+          }
+        });
+        var seen = Object.keys(state.meshDirSeen || {});
+        if (seen.length > MESH_DIR_SEEN_CAP) {
+          seen.sort(function (a, b) { return Number(state.meshDirSeen[a] || 0) - Number(state.meshDirSeen[b] || 0); });
+          seen.slice(0, seen.length - MESH_DIR_SEEN_CAP).forEach(function (key) { delete state.meshDirSeen[key]; });
+        }
+        if (changed) meshDirSaveCache();
+        return changed;
+      }
+      function meshDirSaveCache() {
+        try {
+          var lite = {};
+          Object.keys(state.meshRoomDir || {}).forEach(function (code) {
+            var entry = state.meshRoomDir[code];
+            if (!entry) return;
+            lite[code] = { code: entry.code, name: entry.name || '', hostId: entry.hostId || '', hostName: entry.hostName || '', protected: Boolean(entry.protected), at: entry.at || Date.now() };
+          });
+          localStorage.setItem(MESH_DIR_CACHE_KEY, JSON.stringify(lite));
+        } catch (error) { state.storageAvailable = false; }
+      }
+      function meshDirLoadCache() {
+        try {
+          var lite = JSON.parse(localStorage.getItem(MESH_DIR_CACHE_KEY) || '{}') || {};
+          Object.keys(lite).forEach(function (code) {
+            var entry = lite[code];
+            var id = normalizeRoomId(code);
+            if (!isValidRoomId(id) || !entry) return;
+            if (Date.now() - Number(entry.at || 0) > MESH_DIR_TTL_MS) return;
+            if (!state.meshRoomDir[id]) state.meshRoomDir[id] = { code: id, name: String(entry.name || '').slice(0, 24), hostId: normalizeUserId(entry.hostId), hostName: String(entry.hostName || '').slice(0, 24), protected: Boolean(entry.protected), at: Number(entry.at || 0), cached: true };
+          });
+        } catch (error) { /* storage blocked */ }
+      }
+      function meshDirEntries() {
+        meshDirPrune();
+        var list = Object.keys(state.meshRoomDir || {}).map(function (code) { return state.meshRoomDir[code]; }).filter(Boolean);
+        list.sort(function (a, b) { return Number(b.at || 0) - Number(a.at || 0); });
+        return list;
+      }
+      function meshDirAnnounce(code, options) {
+        var id = normalizeRoomId(code);
+        if (!isValidRoomId(id)) return false;
+        var entry = {
+          code: id,
+          name: String((options && options.name) || state.localName || '').slice(0, 24),
+          hostId: state.localUserId,
+          hostName: String(state.localName || '').slice(0, 24),
+          protected: Boolean(options && options.protected),
+          at: Date.now(),
+          originId: state.localUserId
+        };
+        state.meshRoomDir[id] = entry;
+        state.meshDirSeen[id + ':' + entry.at] = Date.now();
+        meshDirSaveCache();
+        try {
+          meshBroadcast({ type: 'room-announce', code: entry.code, name: entry.name, hostId: entry.hostId, hostName: entry.hostName, protected: entry.protected, at: entry.at, originId: entry.originId });
+        } catch (error) { /* no transport yet — heartbeat retries once meshed */ }
+        meshDirRefreshList();
+        return true;
+      }
+      function meshDirWithdraw(code) {
+        var id = normalizeRoomId(code);
+        if (state.meshRoomDir[id] && state.meshRoomDir[id].hostId === state.localUserId) delete state.meshRoomDir[id];
+        delete state.meshDirLocalOffer[id];
+        meshDirSaveCache();
+        try {
+          meshBroadcast({ type: 'room-withdraw', code: id, hostId: state.localUserId, at: Date.now(), originId: state.localUserId });
+        } catch (error) { /* best effort */ }
+        meshDirRefreshList();
+      }
+      function meshDirRelay(entry, exceptLink) {
+        try {
+          meshBroadcast({ type: 'room-announce', code: entry.code, name: entry.name || '', hostId: entry.hostId || '', hostName: entry.hostName || '', protected: Boolean(entry.protected), at: entry.at || Date.now(), originId: entry.originId || entry.hostId || '' }, exceptLink || null);
+        } catch (error) { /* best effort */ }
+      }
+      function meshDirRefreshList() {
+        try {
+          if (byId('lanNearby') && !byId('lanNearby').hidden) renderLanRooms();
+          else if (state.lanRoomsTimer) renderLanRooms();
+        } catch (error) { /* optional */ }
+      }
+      function meshDirHandle(message, sourceLink) {
+        if (!message || typeof message.type !== 'string') return;
+        var now = Date.now();
+        if (message.type === 'room-announce') {
+          var code = normalizeRoomId(message.code);
+          if (!isValidRoomId(code)) return;
+          var hostId = normalizeUserId(message.hostId);
+          if (!hostId) return;
+          var at = Number(message.at || 0);
+          if (!at || now - at > MESH_DIR_TTL_MS) return;
+          var seenKey = code + ':' + at + ':' + hostId;
+          if (state.meshDirSeen[seenKey]) return;
+          state.meshDirSeen[seenKey] = now;
+          var prev = state.meshRoomDir[code];
+          if (!prev || at >= Number(prev.at || 0)) {
+            state.meshRoomDir[code] = { code: code, name: String(message.name || '').slice(0, 24), hostId: hostId, hostName: String(message.hostName || '').slice(0, 24), protected: Boolean(message.protected), at: at, originId: normalizeUserId(message.originId) || hostId };
+            meshDirSaveCache();
+            meshDirRelay(state.meshRoomDir[code], sourceLink || null);
+            meshDirRefreshList();
+          }
+          return;
+        }
+        if (message.type === 'room-withdraw') {
+          var wcode = normalizeRoomId(message.code);
+          var whost = normalizeUserId(message.hostId);
+          var cur = state.meshRoomDir[wcode];
+          if (cur && (!whost || cur.hostId === whost)) {
+            delete state.meshRoomDir[wcode];
+            meshDirSaveCache();
+            try { meshBroadcast(message, sourceLink || null); } catch (error) { /* best effort */ }
+            meshDirRefreshList();
+          }
+          return;
+        }
+        if (message.type === 'room-offer-request') {
+          var rcode = normalizeRoomId(message.code);
+          var requester = normalizeUserId(message.fromId);
+          if (!requester || requester === state.localUserId) return;
+          var raw = state.meshDirLocalOffer[rcode];
+          if (!raw) return;
+          if (state.role !== 'offer' || !state.pc || state.pc.signalingState !== 'have-local-offer') return;
+          if (normalizeRoomId(state.roomId) !== rcode) return;
+          try {
+            meshSendToUser(requester, { type: 'room-offer', code: rcode, offer: raw, hostId: state.localUserId, reqId: String(message.reqId || ''), at: Date.now() });
+          } catch (error) { /* best effort */ }
+          return;
+        }
+        if (message.type === 'room-offer') {
+          var ocode = normalizeRoomId(message.code);
+          var pending = state.meshDirPendingOffer[String(message.reqId || '')];
+          if (!pending || pending.code !== ocode) return;
+          if (message.offer) {
+            clearTimeout(pending.timer);
+            delete state.meshDirPendingOffer[pending.id];
+            pending.resolve(message.offer);
+          }
+          return;
+        }
+        if (message.type === 'room-answer') {
+          var acode = normalizeRoomId(message.code);
+          if (state.leaving || state.role !== 'offer') return;
+          if (state.lanRoomRegistered !== true || state.lanRoomCode !== acode) return;
+          var isGlobal = normalizeRoomId(acode) === GLOBAL_ROOM_ID;
+          if (state.connected && !isGlobal) return;
+          if (!message.answer || !state.pc || state.pc.signalingState !== 'have-local-offer') return;
+          try {
+            els.answerInput.value = message.answer;
+            els.answerInput.dispatchEvent(new Event('input', { bubbles: true }));
+            applyAnswer().catch(function () { /* applyAnswer surfaces its own errors */ });
+          } catch (error) { /* best effort */ }
+          return;
+        }
+      }
+      function meshDirRequestOffer(code) {
+        var id = normalizeRoomId(code);
+        var local = state.meshDirLocalOffer[id];
+        if (local && state.role === 'offer') return Promise.resolve(local);
+        var entry = (state.meshRoomDir || {})[id];
+        if (!entry) return Promise.resolve(null);
+        if (entry.hostId === state.localUserId) return Promise.resolve(state.meshDirLocalOffer[id] || null);
+        var reqId = 'q' + (++state.meshDirReqCounter) + '-' + Date.now().toString(36);
+        return new Promise(function (resolve) {
+          var done = false;
+          var finish = function (offer) {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            delete state.meshDirPendingOffer[reqId];
+            resolve(offer || null);
+          };
+          var timer = setTimeout(function () { finish(null); }, MESH_DIR_OFFER_TIMEOUT_MS);
+          state.meshDirPendingOffer[reqId] = { id: reqId, code: id, resolve: finish, timer: timer };
+          var sent = false;
+          try {
+            if (entry.hostId) sent = meshSendToUser(entry.hostId, { type: 'room-offer-request', code: id, reqId: reqId, at: Date.now() });
+          } catch (error) { sent = false; }
+          if (!sent) {
+            try { meshBroadcast({ type: 'room-offer-request', code: id, reqId: reqId, hostId: entry.hostId, at: Date.now() }); } catch (error) { /* best effort */ }
+          }
+        });
+      }
+      function meshDirHas(code) {
+        var id = normalizeRoomId(code);
+        var entry = (state.meshRoomDir || {})[id];
+        return Boolean(entry && Date.now() - Number(entry.at || 0) <= MESH_DIR_FRESH_MS);
+      }
+      function maybeSendPrimaryMeshHello() {
+        try {
+          if (!state.channel || state.channel.readyState !== 'open' || !state.peerUserId) return false;
+          if (!state.roomId || state.voiceCallState !== 'idle') return false;
+          if (meshLinkForUser(state.peerUserId)) return false;
+          if (meshPairInitiator(state.localUserId, state.peerUserId) !== state.localUserId) return false;
+          var meshId = meshPairId(state.localUserId, state.peerUserId);
+          if (!normalizeMeshId(meshId)) return false;
+          var sent = false;
+          try {
+            state.channel.send(JSON.stringify({ type: 'mesh-hello', roomId: state.roomId, fromId: state.localUserId, toId: state.peerUserId, meshId: meshId, name: state.localName, color: state.localColor, admin: isRoomAdmin(), governance: governanceSnapshot(), directory: peopleDigest(PEOPLE_GOSSIP_LIMIT), users: state.roomUsers.slice(-100) }));
+            sent = true;
+          } catch (error) { sent = false; }
+          if (sent) {
+            try { promotePrimaryToMesh(meshId); } catch (error) { /* receiver promotes on arrival */ }
+            return true;
+          }
+          return false;
+        } catch (error) { return false; }
+      }
       /* Paste/normalize helpers used by both manual flows */
       function normalizePastedInvite(value) {
         var extracted = extractInviteFromText(value);
         return extracted || String(value || '').trim();
       }
 
-      /* ================ eclipsed: same-browser code join (fully offline) ================
-         A short code can never carry the connection handshake, but it CAN point to it when
-         the pointer lives somewhere both windows can read. This registry stores the hosting
-         window's handshake in this browser (localStorage) and shouts over BroadcastChannel,
-         so typing the room code in another window/tab of the SAME browser connects directly
-         — no server, no network, no third party. Rooms on other devices still join through
-         the invite link below. */
-      var LOCAL_OFFERS_KEY = 'eclipsed.localOffers.v1';
-      var LOCAL_OFFER_TTL_MS = 15 * 60 * 1000;
-      var localBus = null;
-      var localNeed = null;
+            /* ================ retired: same-browser registry removed ================
+         Cross-tab shortcuts used a shared local pointer outside the mesh.
+         Serverless design is mesh-only now: short codes resolve through the mesh
+         room directory (room-announce / offer-request / answer over WebRTC
+         datachannels). No side channel, no shared pointer outside the mesh. */
 
-      function readLocalOffers() {
-        try { return JSON.parse(localStorage.getItem(LOCAL_OFFERS_KEY) || '{}') || {}; } catch (error) { return {}; }
+      /* ================ mesh room directory transport (serverless LAN) ================
+         Same verbs as the old network directory — publish / fetch / answer /
+         heartbeat / rooms list / join-watch — carried only by mesh datachannels.
+         First contact still needs a long invite (HOP1./E1.); after that, short
+         codes resolve through the directory with no further manual steps. */
+      // Retired: LAN room directory removed — long invites only, no polling.
+
+                  function createLanOwnerToken() {
+        return 'mesh';
       }
 
-      function writeLocalOffers(map) {
-        try { localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(map)); } catch (error) { /* storage blocked */ }
+                  function lanFetchJSON() {
+        return Promise.reject(new Error('Short-code rooms are retired — use a long invite.'));
       }
 
-      function publishLocalOffer(code, raw) {
-        if (!code || !raw) return;
-        var map = readLocalOffers();
-        map[code] = { raw: raw, exp: Date.now() + LOCAL_OFFER_TTL_MS };
-        writeLocalOffers(map);
-        postLocal({ type: 'offer', code: code, raw: raw });
+                        function probeLanServer() {
+        var ready = meshGateMeshed();
+        state.lanServerUp = ready;
+        if (ready) lanStartRoomsList();
+        return Promise.resolve(ready);
       }
 
-      function removeLocalOffer(code) {
-        if (!code) return;
-        var map = readLocalOffers();
-        if (!map[code]) return;
-        delete map[code];
-        writeLocalOffers(map);
+                  function lanPublishRoom(code, offerRaw) {
+        var id = normalizeRoomId(code);
+        if (!isValidRoomId(id) || !offerRaw) return Promise.reject(new Error('Missing room offer.'));
+        state.meshDirLocalOffer[id] = offerRaw;
+        var entry = (state.meshRoomDir || {})[id];
+        var prot = Boolean(state.roomPassHash && state.roomPass);
+        meshDirAnnounce(id, { name: state.localName, protected: prot });
+        state.lanServerUp = meshGateMeshed();
+        state.lanRoomCode = id;
+        state.lanRoomRegistered = true;
+        return Promise.resolve({ ok: true, code: id });
       }
 
-      function lookupLocalOffer(code) {
-        var map = readLocalOffers();
-        var entry = map[code];
-        if (!entry) return null;
-        if (!entry.exp || entry.exp < Date.now()) {
-          delete map[code];
-          writeLocalOffers(map);
-          return null;
-        }
-        return entry.raw || null;
+      // Retired: LAN discovery removed — Join uses pasted long invites.
+                  function lanStartRoomsList() {
+        if (lanRoomsTimer) return;
+        lanRoomsTimer = setTimeout(lanRoomsListTick, 100);
       }
 
-      function localBusChannel() {
-        if (localBus) return localBus;
-        if (!window.BroadcastChannel) return null;
-        try {
-          localBus = new BroadcastChannel('eclipsed-local');
-          localBus.onmessage = handleLocalMessage;
-        } catch (error) { localBus = null; }
-        return localBus;
-      }
-
-      function postLocal(message) {
-        var bus = localBusChannel();
-        if (bus) { try { bus.postMessage(message); } catch (error) { /* best effort */ } }
-      }
-
-      function handleLocalMessage(event) {
-        var msg = event && event.data;
-        if (!msg || typeof msg !== 'object') return;
-        if (msg.type === 'offer') {
-          var need = localNeed;
-          if (need && need.code === msg.code && msg.raw) {
-            localNeed = null;
-            need.resolve(msg.raw);
-          }
-        } else if (msg.type === 'need-offer') {
-          if (state.role === 'offer' && !state.connected && state.roomId && msg.code === state.roomId && els.offerOutput && els.offerOutput.value) {
-            postLocal({ type: 'offer', code: state.roomId, raw: els.offerOutput.value });
-          }
-        } else if (msg.type === 'answer') {
-          if (state.role === 'offer' && !state.connected && state.roomId && msg.code === state.roomId && msg.raw && els.answerInput) {
-            els.answerInput.value = msg.raw;
-            els.answerInput.dispatchEvent(new Event('input', { bubbles: true }));
-            applyAnswer().catch(function () { /* applyAnswer surfaces its own errors */ });
-          }
-        }
-      }
-
-      function requestLocalOffer(code) {
-        var direct = lookupLocalOffer(code);
-        if (direct) return Promise.resolve(direct);
-        var bus = localBusChannel();
-        if (!bus) return Promise.resolve(null);
-        return new Promise(function (resolve) {
-          var done = false;
-          var finish = function (raw) {
-            if (done) return;
-            done = true;
-            clearTimeout(timer);
-            localNeed = null;
-            resolve(raw || null);
-          };
-          var timer = setTimeout(function () { finish(null); }, 1500);
-          localNeed = { code: code, resolve: finish };
-          try { bus.postMessage({ type: 'need-offer', code: code }); } catch (error) { finish(null); }
-        });
-      }
-
-      /* ================ eclipsed: LAN room directory (same network) ================
-         When this page is served by the tiny LAN host (lan-server.mjs, see run.md),
-         a room code becomes a real pointer instead of a label: the host posts its
-         WebRTC offer under the code, someone who types the code on another device
-         fetches that offer and posts their answer, and the host applies it
-         automatically. Join-by-code, like a normal chat app — no long codes, no
-         copy/paste ritual. If the LAN service is not reachable, the app silently
-         falls back to the same-browser code join and the manual raw-code flows. */
-      var LAN_API_ROOT = '/lan';
-      var LAN_ROOM_HEARTBEAT_MS = 30000;
-      var LAN_ANSWER_POLL_MS = 1400;
-      var LAN_ROOMS_POLL_MS = 3000;
-
-      function createLanOwnerToken() {
-        var bytes = new Uint8Array(12);
-        if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
-        else for (var i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
-        var out = 'lan';
-        for (var j = 0; j < bytes.length; j += 1) out += bytes[j].toString(16).padStart(2, '0');
-        return out;
-      }
-
-      function lanFetchJSON(pathname, options) {
-        var init = options || {};
-        init.headers = Object.assign({}, init.headers || {}, { 'Content-Type': 'application/json' });
-        init.cache = 'no-store';
-        return fetch(LAN_API_ROOT + pathname, init).then(function (response) {
-          return response.json().catch(function () { return null; }).then(function (body) {
-            body = body || {};
-            if (!response.ok) {
-              if (body.error === 'taken') {
-                var taken = new Error(body.message || 'That code is already taken on this network.');
-                taken.lanTaken = true;
-                throw taken;
-              }
-              var apiError = new Error(body.message || ('Room service error ' + response.status + '.'));
-              throw apiError;
-            }
-            return body;
-          });
-        }).catch(function (error) {
-          if (error && (error.lanTaken || error.message)) throw error;
-          var netError = new Error('The room service is unreachable.');
-          netError.lanDown = true;
-          throw netError;
-        });
-      }
-
-      function probeLanServer() {
-        if (state.lanProbePromise) return state.lanProbePromise;
-        state.lanProbing = true;
-        state.lanProbePromise = new Promise(function (resolve) {
-          var finish = function (up) {
-            state.lanServerUp = up === true;
-            state.lanProbing = false;
-            if (state.lanServerUp) lanStartRoomsList();
-            resolve(state.lanServerUp);
-          };
-          try {
-            fetch(LAN_API_ROOT + '/health', { method: 'GET', cache: 'no-store' })
-              .then(function (response) {
-                if (!response.ok) return false;
-                return response.json().then(function (body) { return Boolean(body && body.ok); }).catch(function () { return false; });
-              })
-              .then(finish)
-              .catch(function () { finish(false); });
-          } catch (error) { finish(false); }
-        });
-        return state.lanProbePromise;
-      }
-
-      function lanPublishRoom(code, offerRaw) {
-        return lanFetchJSON('/rooms/' + encodeURIComponent(code), {
-          method: 'PUT',
-          body: JSON.stringify({ offer: offerRaw, owner: state.lanOwnerToken, name: state.localName })
-        }).then(function () {
-          state.lanServerUp = true;
-        });
-      }
-
-      // LocalSend-style discovery: the LAN host knows every room that is open,
-      // so the Join screen lists them live — tap one to join without a code.
-      function lanStartRoomsList() {
-        if (state.lanRoomsTimer) return;
-        state.lanRoomsTimer = setTimeout(lanRoomsListTick, 100);
-      }
-
-      function lanRoomsListTick() {
-        state.lanRoomsTimer = setTimeout(lanRoomsListTick, LAN_ROOMS_POLL_MS);
+                  function lanRoomsListTick() {
+        lanRoomsTimer = setTimeout(lanRoomsListTick, 3000);
         var wrap = byId('lanNearby');
-        if (!state.lanServerUp || state.connected) {
-          if (wrap) wrap.hidden = true;
+        if (!wrap || state.connected) {
+          if (wrap && state.connected) wrap.hidden = true;
           return;
         }
-        fetch(LAN_API_ROOT + '/rooms', { method: 'GET', cache: 'no-store' })
-          .then(function (response) { return response.ok ? response.json().catch(function () { return null; }) : null; })
-          .then(function (body) { renderLanRooms(body && body.rooms ? body.rooms : []); })
-          .catch(function () { if (wrap) wrap.hidden = true; });
+        renderLanRooms();
       }
 
-      function renderLanRooms(rooms) {
+                  function renderLanRooms(rooms) {
+        if (rooms === undefined) rooms = meshDirEntries();
         var wrap = byId('lanNearby');
         var list = byId('lanRoomList');
         if (!wrap || !list) return;
-        if (!state.lanServerUp || state.connected) { wrap.hidden = true; return; }
+        if (state.connected) { wrap.hidden = true; return; }
         wrap.hidden = false;
         list.textContent = '';
         if (!rooms || !rooms.length) {
           var empty = document.createElement('div');
           empty.className = 'lan-room-empty';
-          empty.textContent = 'No rooms are open on this network right now — create one and share its code.';
+          empty.textContent = 'No rooms are live in this mesh yet — create one and share its code. Newcomers join with the long invite.';
           list.appendChild(empty);
           return;
         }
@@ -10655,7 +10844,7 @@ input:-webkit-autofill:focus {
         });
       }
 
-      function lanJoinNearbyRoom(code) {
+                  function lanJoinNearbyRoom(code) {
         if (state.connected || state.roomId) {
           if (state.roomId && normalizeRoomId(state.roomId) === normalizeRoomId(code) && (state.connected || state.role)) {
             if (els.chatView && els.chatView.hidden) setView('chat');
@@ -10671,116 +10860,74 @@ input:-webkit-autofill:focus {
         try { generateAnswer(); } catch (error) { showSignalError(error.message || 'Could not join that room.'); }
       }
 
-      function lanFetchRoom(code) {
-        return lanFetchJSON('/rooms/' + encodeURIComponent(code), { method: 'GET' })
-          .then(function (body) { return (body && body.offer) ? body.offer : null; })
-          .catch(function (error) {
-            if (error && error.lanDown) state.lanServerUp = false;
-            return null;
-          });
+                  function lanFetchRoom(code) {
+        var id = normalizeRoomId(code);
+        if (!isValidRoomId(id)) return Promise.resolve(null);
+        return meshDirRequestOffer(id).catch(function () { return null; });
       }
 
-      function lanSendAnswer(code, answerRaw) {
-        return lanFetchJSON('/rooms/' + encodeURIComponent(code) + '/answers', {
-          method: 'POST',
-          body: JSON.stringify({ answer: answerRaw })
-        });
+                  function lanSendAnswer(code, answerRaw) {
+        var id = normalizeRoomId(code);
+        if (!isValidRoomId(id) || !answerRaw) return Promise.reject(new Error('Missing answer.'));
+        var entry = (state.meshRoomDir || {})[id];
+        var hostId = entry ? entry.hostId : null;
+        var payload = { type: 'room-answer', code: id, answer: answerRaw, at: Date.now() };
+        var sent = false;
+        try {
+          if (hostId && hostId !== state.localUserId) sent = meshSendToUser(hostId, payload);
+          else if (!hostId) { meshBroadcast(payload); sent = true; }
+        } catch (error) { sent = false; }
+        if (!sent) return Promise.reject(new Error('No mesh route to the host yet.'));
+        return Promise.resolve({ ok: true, code: id });
       }
 
-      function lanStartHeartbeat(code) {
+                  function lanStartHeartbeat(code) {
         lanStopHeartbeat();
-        state.lanHeartbeatTimer = setInterval(function () {
-          if (state.lanRoomRegistered !== true || state.lanRoomCode !== code) { lanStopHeartbeat(); return; }
-          fetch(LAN_API_ROOT + '/rooms/' + encodeURIComponent(code) + '/heartbeat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ owner: state.lanOwnerToken }),
-            cache: 'no-store'
-          }).catch(function () { /* the poll loop decides what to do */ });
-        }, LAN_ROOM_HEARTBEAT_MS);
+        var id = normalizeRoomId(code);
+        if (!isValidRoomId(id)) return;
+        state.meshDirHeartbeatTimer = setInterval(function () {
+          if (state.lanRoomRegistered !== true || state.lanRoomCode !== id) { lanStopHeartbeat(); return; }
+          if (state.role !== 'offer') return;
+          meshDirAnnounce(id, { name: state.localName, protected: Boolean(state.roomPassHash && state.roomPass) });
+        }, MESH_DIR_HEARTBEAT_MS);
       }
 
-      function lanStopHeartbeat() {
-        if (state.lanHeartbeatTimer) {
-          clearInterval(state.lanHeartbeatTimer);
-          state.lanHeartbeatTimer = null;
+                  function lanStopHeartbeat() {
+        if (state.meshDirHeartbeatTimer) {
+          clearInterval(state.meshDirHeartbeatTimer);
+          state.meshDirHeartbeatTimer = null;
         }
       }
 
-      function lanStartPolling(code) {
+                  function lanStartPolling(code) {
         lanStopPolling();
-        state.lanPollCode = code;
-        state.lanPolling = false;
-        lanPollTick();
+        lanPollCode = normalizeRoomId(code);
+        lanPolling = false;
       }
 
-      function lanStopPolling() {
-        state.lanPollCode = null;
-        state.lanPolling = false;
-        if (state.lanPollTimer) {
-          clearTimeout(state.lanPollTimer);
-          state.lanPollTimer = null;
+                  function lanStopPolling() {
+        lanPollCode = null;
+        lanPolling = false;
+        if (lanPollTimer) {
+          clearTimeout(lanPollTimer);
+          lanPollTimer = null;
         }
       }
 
-      function lanPollTick() {
-        var code = state.lanPollCode;
+                  function lanPollTick() {
+        // Event-driven over mesh: answers arrive as room-answer messages and are
+        // applied immediately (first valid wins). This tick only keeps the host
+        // announced while the welcome offer is pending.
+        var code = lanPollCode;
         if (!code || code !== state.lanRoomCode || state.lanRoomRegistered !== true) return;
-        if (state.leaving) { lanFinishRoom(); return; }
-        if (state.role !== 'offer') { lanFinishRoom(); return; }
-        var global = normalizeRoomId(code) === GLOBAL_ROOM_ID;
-        // A private room's published offer is spent the moment its host connects;
-        // only #global keeps its directory entry open for the whole session.
-        if (state.connected && !global) { lanFinishRoom(); return; }
-        if (state.lanPolling) return;
-        state.lanPolling = true;
-        lanFetchJSON('/rooms/' + encodeURIComponent(code) + '/answers?after=' + Number(state.lanAnswerCursor || 0), { method: 'GET' })
-          .then(function (body) {
-            state.lanAnswerCursor = Number(body && body.after) || state.lanAnswerCursor || 0;
-            var answers = (body && Array.isArray(body.answers)) ? body.answers : [];
-            if (!answers.length) return;
-            // Apply queued answers one at a time. Every joiner answers the single
-            // offer this host currently has published, so only the first valid
-            // answer can ever land; the rest are stale or garbage and must never
-            // clobber an in-progress connection by racing setRemoteDescription.
-            return answers.reduce(function (chain, item) {
-              return chain.then(function () {
-                if (state.leaving || state.lanRoomRegistered !== true || state.lanRoomCode !== code) return;
-                if (state.role !== 'offer') return;
-                if (state.connected && !global) return;
-                if (!item || !item.raw) return;
-                if (!state.pc || state.pc.signalingState !== 'have-local-offer') return;
-                els.answerInput.value = item.raw;
-                els.answerInput.dispatchEvent(new Event('input', { bubbles: true }));
-                return applyAnswer().catch(function () { /* applyAnswer surfaces its own errors */ });
-              });
-            }, Promise.resolve());
-          })
-          .catch(function () {
-            // Room entry vanished (service restart / expiry): try once to re-register.
-            if (state.lanRoomRegistered && state.role === 'offer' && !state.leaving && els.offerOutput && els.offerOutput.value) {
-              var reCode = state.lanRoomCode;
-              lanPublishRoom(reCode, els.offerOutput.value).then(function () {
-                state.lanAnswerCursor = 0;
-              }).catch(function () {
-                state.lanServerUp = false;
-                state.lanRoomRegistered = false;
-                state.lanRoomCode = null;
-                lanStopHeartbeat();
-                var waitReply = byId('waitReply');
-                if (waitReply) waitReply.hidden = false;
-                refreshInvitePanel(reCode);
-                showToast('The room service went offline — you can still finish manually below.', true);
-              });
-            }
-          })
-          .then(function () {
-            state.lanPolling = false;
-            if (state.lanPollCode) state.lanPollTimer = setTimeout(lanPollTick, LAN_ANSWER_POLL_MS);
-          });
+        if (state.leaving || state.role !== 'offer') { lanFinishRoom(); return; }
+        var isGlobal = normalizeRoomId(code) === GLOBAL_ROOM_ID;
+        if (state.connected && !isGlobal) { lanFinishRoom(); return; }
+        if (!state.pc || state.pc.signalingState !== 'have-local-offer') return;
+        meshDirAnnounce(code, { name: state.localName, protected: Boolean(state.roomPassHash && state.roomPass) });
       }
 
-      function scheduleGlobalReflow() {
+                  function scheduleGlobalReflow() {
         if (lanReflowTimer) return;
         lanReflowTimer = setTimeout(function () {
           lanReflowTimer = null;
@@ -10795,7 +10942,7 @@ input:-webkit-autofill:focus {
       // Stand up a fresh "welcome" offer for the next joiner of #global and
       // re-publish it under the same code. The spent bootstrap connection is
       // promoted into the adaptive mesh, so everyone already in the room stays.
-      function reflowGlobalOffer() {
+                  function reflowGlobalOffer() {
         if (lanReflowing || state.leaving) return;
         var roomId = state.roomId;
         if (!state.channel || state.channel.readyState !== 'open' || !state.peerUserId) {
@@ -10817,15 +10964,13 @@ input:-webkit-autofill:focus {
               if (!pc.localDescription) return null;
               els.offerOutput.value = encodeSignal(pc.localDescription);
               els.offerOutputWrap.hidden = false;
-              publishLocalOffer(roomId, els.offerOutput.value);
-              if (!state.lanServerUp) return null;
+              meshDirAnnounce(roomId, { name: state.localName, protected: Boolean(state.roomPassHash && state.roomPass) });
               return lanPublishRoom(roomId, els.offerOutput.value).then(function () {
                 state.lanRoomCode = roomId;
                 state.lanRoomRegistered = true;
-                state.lanAnswerCursor = 0;
                 lanStartHeartbeat(roomId);
                 lanStartPolling(roomId);
-                setStatus('connecting', 'WAITING', 'Global room open — #' + roomId, 'Open to everyone on this network');
+                setStatus('connecting', 'WAITING', 'Global room open — #' + roomId, 'Open to everyone in this mesh');
                 updateGlobalPin();
               });
             })
@@ -10838,13 +10983,11 @@ input:-webkit-autofill:focus {
       }
 
       /* ---------- joiner side: bounded wait with retry + takeover ---------- */
-      function lanStartJoinWatch(code) {
-        var codeStr = String(code || '').toLowerCase();
+                  function lanStartJoinWatch(code) {
+        var codeStr = normalizeRoomId(code || '');
         var sameAttempt = lanJoinWatchCode === codeStr;
         lanStopJoinWatch();
         lanJoinWatchCode = codeStr;
-        // Watch-driven retries re-enter through generateAnswer and must not
-        // reset the attempt budget; only a genuinely new join restarts it.
         if (!sameAttempt) {
           lanJoinAttempts = 0;
           lanJoinGiveUp = false;
@@ -10852,7 +10995,7 @@ input:-webkit-autofill:focus {
         lanJoinWatchTimer = setTimeout(lanJoinWatchTick, LAN_JOIN_WATCH_MS);
       }
 
-      function lanStopJoinWatch() {
+                  function lanStopJoinWatch() {
         if (lanJoinWatchTimer) {
           clearTimeout(lanJoinWatchTimer);
           lanJoinWatchTimer = null;
@@ -10860,7 +11003,7 @@ input:-webkit-autofill:focus {
         lanJoinWatchCode = '';
       }
 
-      function lanJoinWatchTick() {
+                  function lanJoinWatchTick() {
         lanJoinWatchTimer = null;
         var code = lanJoinWatchCode;
         if (!code) return;
@@ -10890,14 +11033,12 @@ input:-webkit-autofill:focus {
           }
           lanStopJoinWatch();
           closePeer(true, false, true);
-          setStatus('error', 'OFFLINE', 'Host not responding for #' + code, 'Close any stale window hosting it, then retry');
+          setStatus('error', 'OFFLINE', 'Host not responding for #' + code, 'Ask the host for a fresh long invite, then retry');
           showSignalError('The host for #' + code + ' is not answering. If an old window on this network is hosting it, close that window and try again.');
           showToast('Could not join #' + code + ' — the host is not responding.', true);
           return;
         }
-        lanFetchJSON('/rooms').then(function (body) {
-          var rooms = (body && Array.isArray(body.rooms)) ? body.rooms : [];
-          var open = rooms.some(function (room) { return room && String(room.code || '').toLowerCase() === code; });
+        var open = meshDirHas(code);
           if (!open && code === GLOBAL_ROOM_ID) {
             // Nobody hosts #global anymore — take it over right here so the
             // global chat never dies with its (possibly stale) previous host.
@@ -10931,26 +11072,23 @@ input:-webkit-autofill:focus {
             lanJoinWatchTimer = setTimeout(lanJoinWatchTick, LAN_JOIN_WATCH_MS);
           }
           lanJoinWatchTimer = setTimeout(lanJoinWatchTick, LAN_JOIN_WATCH_MS);
-        }).catch(function () {
-          lanJoinWatchTimer = setTimeout(lanJoinWatchTick, LAN_JOIN_WATCH_MS);
-        });
+
       }
 
 
-      function lanFinishRoom() {
-        var code = state.lanRoomCode;
-        lanStopPolling();
+                        function lanFinishRoom() {
+        try {
+          var code = state.lanRoomCode;
+          if (code && state.lanRoomRegistered) meshDirWithdraw(code);
+        } catch (error) { /* best effort */ }
+        state.lanRoomRegistered = false;
+        state.lanRoomCode = null;
+        state.lanJoinCode = null;
         lanStopHeartbeat();
-        if (state.lanRoomRegistered && code) {
-          state.lanRoomRegistered = false;
-          state.lanRoomCode = null;
-          state.lanAnswerCursor = 0;
-          fetch(LAN_API_ROOT + '/rooms/' + encodeURIComponent(code) + '?owner=' + encodeURIComponent(state.lanOwnerToken), { method: 'DELETE', cache: 'no-store' })
-            .catch(function () { /* best effort */ });
-        }
+        lanStopPolling();
       }
 
-      function refreshJoinAction() {
+                  function refreshJoinAction() {
         if (!els.generateAnswer) return;
         var hasCode = Boolean(String((els.joinOfferInput && els.joinOfferInput.value) || '').trim());
         var hasAlt = Boolean(els.joinInviteText && String(els.joinInviteText.value || '').trim());
@@ -12384,7 +12522,7 @@ input:-webkit-autofill:focus {
       }
 
       /* ---------- global room ---------- */
-      function openGlobalChat() {
+                  function openGlobalChat() {
         if (!requireSavedProfile()) return;
         if (state.roomId && normalizeRoomId(state.roomId) === GLOBAL_ROOM_ID && (state.connected || state.role)) {
           if (els.chatView && els.chatView.hidden) setView('chat');
@@ -12399,7 +12537,7 @@ input:-webkit-autofill:focus {
       // join panels, and never a flash back to Home. Whatever the network
       // decides (join the live host, or host it here), that happens quietly
       // underneath the already-open Global room.
-      function openGlobalQuiet() {
+                  function openGlobalQuiet() {
         if (!state.localUserId || !state.localName) { openGlobalChat(); return; }
         if (state.roomId && normalizeRoomId(state.roomId) === GLOBAL_ROOM_ID && (state.connected || state.role)) { openGlobalChat(); return; }
         try { openGlobalStageAndConnect(); } catch (error) { openGlobalChat(); }
@@ -12407,7 +12545,7 @@ input:-webkit-autofill:focus {
 
       // Park whatever room is open (silently — no bounce through Home), show
       // the Global stage at once, then let the engine join or host underneath.
-      function openGlobalStageAndConnect() {
+                  function openGlobalStageAndConnect() {
         if (state.roomId || state.connected) {
           closePeer(true, false);
           clearInviteUi();
@@ -12419,7 +12557,7 @@ input:-webkit-autofill:focus {
 
       // Minimal chrome for the moment Global is opened but not yet connected,
       // so the user is in the room even while the handshake is in flight.
-      function stageGlobalRoom() {
+                  function stageGlobalRoom() {
         state.peerUserId = null;
         state.peerName = 'Global';
         state.peerColor = '#b5b5b5';
@@ -12439,7 +12577,7 @@ input:-webkit-autofill:focus {
 
       // Another device is hosting #global — we are joining it. Keep the chat
       // stage front and centre while the handshake runs underneath.
-      function stageGlobalJoining() {
+                  function stageGlobalJoining() {
         if (els.chatView && els.chatView.hidden) setView('chat');
         if (els.chatEmptyCopy) setText(els.chatEmptyCopy, 'Joining the network room…');
         setComposerState('Joining the network room');
@@ -12450,7 +12588,7 @@ input:-webkit-autofill:focus {
         try { updateGlobalPin(); } catch (error) { /* optional */ }
       }
 
-      function hostGlobalChat() {
+                  function hostGlobalChat() {
         // Hosting #global means nobody else is in it right now — an empty
         // shared channel resets, so start from a clean slate (no stale
         // transcript from an earlier empty epoch).
@@ -12463,25 +12601,14 @@ input:-webkit-autofill:focus {
         try { generateOffer(); } catch (error) { showSignalError(error && error.message || 'Could not open the global chat.'); }
       }
 
-      // A LAN directory entry only counts as open if its owner is still
-      // refreshing it. Entries from crashed/closed hosts (no heartbeat for a
-      // while) must not be joined — the join would stall against a dead offer.
-      var LAN_ROOM_FRESH_MS = 100 * 1000;
+      // Retired: LAN freshness check removed.
 
-      function lanRoomFresh(code) {
-        var wanted = normalizeRoomId(code);
-        return lanFetchJSON('/rooms').then(function (body) {
-          var rooms = (body && Array.isArray(body.rooms)) ? body.rooms : [];
-          return rooms.some(function (room) {
-            if (!room || String(room.code || '').toLowerCase() !== wanted) return false;
-            if (Date.now() - Number(room.at || 0) > LAN_ROOM_FRESH_MS) return false;
-            return true;
-          });
-        }).catch(function () { return false; });
+                  function lanRoomFresh(code) {
+        return Promise.resolve(meshDirHas(code));
       }
 
-      function tryJoinOpenGlobalRoom() {
-        if (!state.lanServerUp) { hostGlobalChat(); return; }
+                  function tryJoinOpenGlobalRoom() {
+        if (!meshGateMeshed()) { hostGlobalChat(); return; }
         lanRoomFresh(GLOBAL_ROOM_ID).then(function (open) {
           if (open) {
             lanJoinNearbyRoom(GLOBAL_ROOM_ID);
@@ -12492,7 +12619,7 @@ input:-webkit-autofill:focus {
         }).catch(function () { hostGlobalChat(); });
       }
 
-      function updateGlobalPin() {
+                  function updateGlobalPin() {
         var row = byId('globalRowButton');
         var here = Boolean(state.roomId && normalizeRoomId(state.roomId) === GLOBAL_ROOM_ID);
         if (row) row.classList.toggle('active', here);
@@ -12594,7 +12721,7 @@ input:-webkit-autofill:focus {
         });
       }
 
-      function wireNewShell() {
+                  function wireNewShell() {
         var globalRow = byId('globalRowButton');
         if (globalRow) globalRow.addEventListener('click', function () { openGlobalQuiet(); });
         var globalOpen = byId('globalOpenButton');
@@ -12625,7 +12752,7 @@ input:-webkit-autofill:focus {
 
       function init() {
         els = {
-          localAvatar: byId('localAvatar'), localColorCode: byId('localColorCode'), displayName: byId('displayName'), sideStatus: byId('sideStatus'), sideStatusDot: byId('sideStatusDot'), sideStatusTitle: byId('sideStatusTitle'), sideStatusDetail: byId('sideStatusDetail'), sideReset: byId('sideReset'), roomBadge: byId('roomBadge'), sideRoomName: byId('sideRoomName'), sideRoomDetail: byId('sideRoomDetail'), roomType: byId('roomType'), roomInput: byId('roomInput'), topbarTitle: byId('topbarTitle'), topbarPeer: byId('topbarPeer'), topReset: byId('topReset'), welcomeView: byId('welcomeView'), chatView: byId('chatView'), createChat: byId('createChat'), joinChat: byId('joinChat'), connectCard: byId('connectCard'), flowTitle: byId('flowTitle'), flowStep: byId('flowStep'), offerMode: byId('offerMode'), joinMode: byId('joinMode'), offerPanel: byId('offerPanel'), joinPanel: byId('joinPanel'), generateOffer: byId('generateOffer'), offerOutputWrap: byId('offerOutputWrap'), offerOutput: byId('offerOutput'), copyOffer: byId('copyOffer'), answerInput: byId('answerInput'), applyAnswer: byId('applyAnswer'), joinOfferInput: byId('joinOfferInput'), generateAnswer: byId('generateAnswer'), answerOutputWrap: byId('answerOutputWrap'), answerOutput: byId('answerOutput'), copyAnswer: byId('copyAnswer'), signalError: byId('signalError'),          notificationGate: byId('notificationGate'), enableNotifications: byId('enableNotifications'), notificationGateStatus: byId('notificationGateStatus'), toast: byId('toast'), peerAvatar: byId('peerAvatar'), chatPeerName: byId('chatPeerName'), chatPeerId: byId('chatPeerId'), chatStatusDot: byId('chatStatusDot'), chatPeerStatus: byId('chatPeerStatus'), chatAiStatus: byId('chatAiStatus'), mentionMenu: byId('mentionMenu'), userCard: byId('userCard'), userCardAvatar: byId('userCardAvatar'), userCardName: byId('userCardName'), userCardId: byId('userCardId'), userCardColor: byId('userCardColor'),          userCardDm: byId('userCardDm'), userCardFriend: byId('userCardFriend'), userCardFriendSecondary: byId('userCardFriendSecondary'), voiceCallButton: byId('voiceCallButton'), voiceCallLabel: byId('voiceCallLabel'), voiceMuteButton: byId('voiceMuteButton'), voiceEndButton: byId('voiceEndButton'), voiceCallBanner: byId('voiceCallBanner'), voiceCallStatus: byId('voiceCallStatus'), voiceAcceptButton: byId('voiceAcceptButton'), voiceDeclineButton: byId('voiceDeclineButton'), remoteAudio: byId('remoteAudio'), friendRequestBanner: byId('friendRequestBanner'), friendRequestStatus: byId('friendRequestStatus'), friendAcceptButton: byId('friendAcceptButton'), friendDeclineButton: byId('friendDeclineButton'),          aiStatusBadge: byId('aiStatusBadge'), aiStatusDot: byId('aiStatusDot'), aiStatusTitle: byId('aiStatusTitle'), aiStatusDetail: byId('aiStatusDetail'), meshStatusBadge: byId('meshStatusBadge'), meshStatusTitle: byId('meshStatusTitle'), meshStatusDetail: byId('meshStatusDetail'), meshManageButton: byId('meshManageButton'), meshPanel: byId('meshPanel'), meshPanelClose: byId('meshPanelClose'), meshPanelSummary: byId('meshPanelSummary'), meshInviteButton: byId('meshInviteButton'), meshTargetInput: byId('meshTargetInput'), meshOfferOutputWrap: byId('meshOfferOutputWrap'), meshOfferOutput: byId('meshOfferOutput'), meshCopyOffer: byId('meshCopyOffer'), meshJoinOfferInput: byId('meshJoinOfferInput'), meshGenerateAnswer: byId('meshGenerateAnswer'), meshAnswerOutputWrap: byId('meshAnswerOutputWrap'), meshAnswerOutput: byId('meshAnswerOutput'), meshCopyAnswer: byId('meshCopyAnswer'), meshAnswerInput: byId('meshAnswerInput'), meshApplyAnswer: byId('meshApplyAnswer'), chatLeaveButton: byId('chatLeaveButton'), governanceManageButton: byId('governanceManageButton'), governancePanel: byId('governancePanel'), governancePanelClose: byId('governancePanelClose'), governanceSummary: byId('governanceSummary'), governanceMemberList: byId('governanceMemberList'), governanceTargetInput: byId('governanceTargetInput'), governanceProposeButton: byId('governanceProposeButton'), governanceDemoteButton: byId('governanceDemoteButton'), governanceKickButton: byId('governanceKickButton'), governanceBanButton: byId('governanceBanButton'), governanceReleaseButton: byId('governanceReleaseButton'), governanceProposalList: byId('governanceProposalList'), governanceNotice: byId('governanceNotice'), messageList: byId('messageList'), systemNotice: byId('systemNotice'), chatEmpty: byId('chatEmpty'), chatEmptyCopy: byId('chatEmptyCopy'), composerState: byId('composerState'), dmTargetLabel: byId('dmTargetLabel'), clearDm: byId('clearDm'),        messageForm: byId('messageForm'), messageInput: byId('messageInput'), sendButton: byId('sendButton')
+          localAvatar: byId('localAvatar'), localColorCode: byId('localColorCode'), displayName: byId('displayName'), sideStatus: byId('sideStatus'), sideStatusDot: byId('sideStatusDot'), sideStatusTitle: byId('sideStatusTitle'), sideStatusDetail: byId('sideStatusDetail'), sideReset: byId('sideReset'), roomBadge: byId('roomBadge'), sideRoomName: byId('sideRoomName'), sideRoomDetail: byId('sideRoomDetail'), roomType: byId('roomType'), roomInput: byId('roomInput'), topbarTitle: byId('topbarTitle'), topbarPeer: byId('topbarPeer'), topReset: byId('topReset'), welcomeView: byId('welcomeView'), chatView: byId('chatView'), createChat: byId('createChat'), joinChat: byId('joinChat'), connectCard: byId('connectCard'), flowTitle: byId('flowTitle'), flowStep: byId('flowStep'), offerMode: byId('offerMode'), joinMode: byId('joinMode'), offerPanel: byId('offerPanel'), joinPanel: byId('joinPanel'), generateOffer: byId('generateOffer'), offerOutputWrap: byId('offerOutputWrap'), offerOutput: byId('offerOutput'), copyOffer: byId('copyOffer'), answerInput: byId('answerInput'), applyAnswer: byId('applyAnswer'), joinOfferInput: byId('joinOfferInput'), generateAnswer: byId('generateAnswer'), answerOutputWrap: byId('answerOutputWrap'), answerOutput: byId('answerOutput'), copyAnswer: byId('copyAnswer'), signalError: byId('signalError'),          notificationGate: byId('notificationGate'), enableNotifications: byId('enableNotifications'), notificationGateStatus: byId('notificationGateStatus'), toast: byId('toast'), peerAvatar: byId('peerAvatar'), chatPeerName: byId('chatPeerName'), chatPeerId: byId('chatPeerId'), chatStatusDot: byId('chatStatusDot'), chatPeerStatus: byId('chatPeerStatus'), chatAiStatus: byId('chatAiStatus'), mentionMenu: byId('mentionMenu'), userCard: byId('userCard'), userCardAvatar: byId('userCardAvatar'), userCardName: byId('userCardName'), userCardId: byId('userCardId'), userCardColor: byId('userCardColor'),          userCardDm: byId('userCardDm'), userCardFriend: byId('userCardFriend'), userCardFriendSecondary: byId('userCardFriendSecondary'), voiceCallButton: byId('voiceCallButton'), voiceCallLabel: byId('voiceCallLabel'), voiceMuteButton: byId('voiceMuteButton'), voiceEndButton: byId('voiceEndButton'), voiceCallBanner: byId('voiceCallBanner'), voiceCallStatus: byId('voiceCallStatus'), voiceAcceptButton: byId('voiceAcceptButton'), voiceDeclineButton: byId('voiceDeclineButton'), remoteAudio: byId('remoteAudio'), friendRequestBanner: byId('friendRequestBanner'), friendRequestStatus: byId('friendRequestStatus'), friendAcceptButton: byId('friendAcceptButton'), friendDeclineButton: byId('friendDeclineButton'),          aiStatusBadge: byId('aiStatusBadge'), aiStatusDot: byId('aiStatusDot'), aiStatusTitle: byId('aiStatusTitle'), aiStatusDetail: byId('aiStatusDetail'), meshStatusBadge: byId('meshStatusBadge'), meshStatusTitle: byId('meshStatusTitle'), meshStatusDetail: byId('meshStatusDetail'), meshManageButton: byId('meshManageButton'), meshPanel: byId('meshPanel'), meshPanelClose: byId('meshPanelClose'), meshPanelSummary: byId('meshPanelSummary'), meshInviteButton: byId('meshInviteButton'), meshTargetInput: byId('meshTargetInput'), meshOfferOutputWrap: byId('meshOfferOutputWrap'), meshOfferOutput: byId('meshOfferOutput'), meshCopyOffer: byId('meshCopyOffer'), meshJoinOfferInput: byId('meshJoinOfferInput'), meshGenerateAnswer: byId('meshGenerateAnswer'), meshAnswerOutputWrap: byId('meshAnswerOutputWrap'), meshAnswerOutput: byId('meshAnswerOutput'), meshCopyAnswer: byId('meshCopyAnswer'), meshAnswerInput: byId('meshAnswerInput'), meshApplyAnswer: byId('meshApplyAnswer'),          chatLeaveButton: byId('chatLeaveButton'), governanceManageButton: byId('governanceManageButton'), governancePanel: byId('governancePanel'), governancePanelClose: byId('governancePanelClose'), governanceSummary: byId('governanceSummary'), governanceMemberList: byId('governanceMemberList'), governanceKickButton: byId('governanceKickButton'), governanceBanButton: byId('governanceBanButton'), governanceReleaseButton: byId('governanceReleaseButton'), governanceNotice: byId('governanceNotice'), messageList: byId('messageList'), systemNotice: byId('systemNotice'), chatEmpty: byId('chatEmpty'), chatEmptyCopy: byId('chatEmptyCopy'), composerState: byId('composerState'), dmTargetLabel: byId('dmTargetLabel'), clearDm: byId('clearDm'),        messageForm: byId('messageForm'), messageInput: byId('messageInput'), sendButton: byId('sendButton')
         };
         // eclipsed. additions
         els.passwordToggle = byId('passwordToggle');
@@ -12633,8 +12760,9 @@ input:-webkit-autofill:focus {
         els.joinPassword = byId('joinPassword');
         els.joinInviteText = byId('joinInviteText');
         els.roomInput = els.roomInput || byId('roomInput');
-        state.lanOwnerToken = createLanOwnerToken();
-        probeLanServer();
+        meshDirLoadCache();
+        lanStartRoomsList();
+        updateMeshGate();
         state.localName = '';
         state.localPicture = '';
         state.pendingPicture = '';
@@ -12710,12 +12838,9 @@ input:-webkit-autofill:focus {
         els.meshAnswerInput.addEventListener('input', function () { els.meshApplyAnswer.disabled = !els.meshAnswerInput.value.trim(); });
         els.governanceManageButton.addEventListener('click', function () { setGovernancePanel(!state.governancePanelOpen); });
         els.governancePanelClose.addEventListener('click', function () { setGovernancePanel(false); });
-        els.governanceProposeButton.addEventListener('click', function () { governanceRunTargetAction('promote'); });
-        els.governanceDemoteButton.addEventListener('click', function () { governanceRunTargetAction('demote'); });
         els.governanceKickButton.addEventListener('click', function () { governanceRunTargetAction('kick'); });
         els.governanceBanButton.addEventListener('click', function () { governanceRunTargetAction('ban'); });
         els.governanceReleaseButton.addEventListener('click', governanceRunRelease);
-        els.governanceTargetInput.addEventListener('input', function () { governanceRender(); });
         document.addEventListener('mousedown', function (event) {
           if (els.userCard && !els.userCard.hidden && !els.userCard.contains(event.target) && event.target !== els.chatPeerName && event.target !== els.chatPeerId && event.target !== els.peerAvatar) hideUserCard();
         });
@@ -12724,8 +12849,8 @@ input:-webkit-autofill:focus {
           if (state.pageExitHandled) return;
           state.pageExitHandled = true;
           var roomId = state.roomId;
-          removeLocalOffer(roomId);
-          lanFinishRoom();
+          try { stopPrimaryKeepalive(); } catch (error) { /* optional */ }
+          try { if (state.lanRoomRegistered && state.lanRoomCode) meshDirWithdraw(state.lanRoomCode); } catch (error) { /* best effort */ }
           sendLeave();
           endVoiceCall(true);
           removeMeshLinks();
